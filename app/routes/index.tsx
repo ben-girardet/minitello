@@ -19,6 +19,7 @@ export default function Index() {
       {steps.map(step => (
         <Step step={step} key={step.id}></Step>
       ))}
+      <Button>Click me</Button>
     </div>
   );
 }
