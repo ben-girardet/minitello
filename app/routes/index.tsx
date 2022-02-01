@@ -4,6 +4,10 @@ import { useLoaderData } from "remix";
 import styled from "styled-components";
 import { db } from '~/utils/db.server';
 import { Step } from '~/components/step';
+import * as ReactDOM from 'react-dom';
+import React from 'react';
+import ContextualMenu from "~/components/contextual-menu";
+import { StepCreator } from "~/components/step-creator";
 
 export const loader = async () => {
   const steps = await db.step.findMany();
@@ -19,7 +23,7 @@ export default function Index() {
       {steps.map(step => (
         <Step step={step} key={step.id}></Step>
       ))}
-      <Button>Click me</Button>
+      <StepCreator></StepCreator>
     </div>
   );
 }

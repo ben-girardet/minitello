@@ -1,7 +1,10 @@
 import { Step  as StepModel } from '@prisma/client';
-import { Circle, CircleCheck, Dots } from 'tabler-icons-react';
+import { Circle, CircleCheck, Dots, Copy, Trash, DragDrop2 } from 'tabler-icons-react';
 import { useFetcher } from 'remix';
 import styled from 'styled-components';
+import React, { useState, MouseEvent, TouchEvent } from 'react';
+import ContextualMenu from './contextual-menu';
+import ContextualMenuButton from './contextual-menu-button';
 
 export interface StepWithChildren extends StepModel {
   children?: StepWithChildren[];
@@ -18,9 +21,33 @@ export function Step({step}: {step: StepWithChildren}) {
     fetcher.submit({action, projectId, stepId}, {method: 'put', action: `/projects/${projectId}`});
   }
 
+  function toggleStepDetails() {
+    console.log('toggleStepDetails');
+  }
+
+  const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [pointerPosition, setPointerPosition] = useState<{x: number, y: number} | null>(null);
+  
+  function openMoreMenu(event: MouseEvent | TouchEvent) {
+    console.log('event', event);
+    setMenuAnchor(event.target as HTMLElement | null);
+    setIsMenuOpened(true);
+    if (event.type === 'click') {
+      setPointerPosition({x: (event as MouseEvent).pageX, y: (event as MouseEvent).pageY});
+    } else {
+      setPointerPosition({x: (event as TouchEvent).touches[0].pageX, y: (event as TouchEvent).touches[0].pageY});
+    }
+    event.stopPropagation();
+  }
+
+  function hideMoreMenu() {
+    setIsMenuOpened(false);
+  }
+
   return (
     <Wrapper>
-      <Main>
+      <Main tabIndex={0} onClick={toggleStepDetails}>
         <Indicator onClick={toggleProgress}>
          {step.progress === 1 ?
           <CircleCheck className="icon" />
@@ -29,7 +56,7 @@ export function Step({step}: {step: StepWithChildren}) {
          }
         </Indicator>
         <Name>{step.name}</Name>
-        <More>
+        <More onClick={openMoreMenu}>
           <Dots className="icon" />
         </More>
       </Main>
@@ -37,9 +64,23 @@ export function Step({step}: {step: StepWithChildren}) {
         <Children>
           {step.children ? step.children.map((child) => (
             <Step step={child}></Step>
-          )) : undefined}
+            )) : undefined}
         </Children>
       </WhenOpenedWrapper>
+      <ContextualMenu hidden={!isMenuOpened} onHide={hideMoreMenu} anchor={menuAnchor} pointerPosition={pointerPosition}>
+        <ContextualMenuButton>
+          <Copy></Copy>
+          Duplicate
+          </ContextualMenuButton>
+        <ContextualMenuButton>
+          <DragDrop2></DragDrop2>
+          Move
+          </ContextualMenuButton>
+        <ContextualMenuButton>
+          <Trash></Trash>
+          Delete
+          </ContextualMenuButton>
+      </ContextualMenu>
     </Wrapper>
   )
 }
@@ -60,20 +101,29 @@ const Main = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  cursor: pointer;
+  outline-offset: 4px;
 `;
-const Indicator = styled.div`
+const Indicator = styled.button`
   display: flex;
   align-items: center;
   flex-shrink: 0;
   text-align: center;
+  color: var(--primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
 `;
 const Name = styled.div`
   width: 100%;
 `;
-const More = styled.div`
+const More = styled.button`
   display: flex;
   align-items: center;
   margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 `;
 const WhenOpenedWrapper = styled.div``;
 const Children = styled.div``;

@@ -20,6 +20,7 @@ export default css`
 */
 html, body {
   height: 100%;
+  overflow: auto;
 }
 
 /*
