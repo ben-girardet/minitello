@@ -6,7 +6,7 @@ const ContextualMenuButton: FunctionComponent = ({children}) => {
 }
 
 const Wrapper = styled.button`
-  background: white;
+  background: var(--primary-contrast);
   color: var(--primary);
   border: none;
   min-height: 42px;

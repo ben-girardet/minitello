@@ -54,7 +54,7 @@ const Indicator = styled.button`
   flex-shrink: 0;
   text-align: center;
   color: var(--primary);
-  background: transparent;
+  background: var(--primary-contrast);
   border: none;
 `;
 const Name = styled.div`

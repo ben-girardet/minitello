@@ -7,7 +7,15 @@ import {
 import { FormResult, FormResultGlobalError, getFormDataAsString } from "~/utils/form";
 import { createUserSession } from "~/utils/session.server";
 import { UserUtil } from "~/utils/user";
-
+import styled from 'styled-components';
+import Card from "~/components/card";
+import Button from "~/components/button";
+import TextField from "~/components/text-field";
+import Stack from "~/components/stack";
+import FormError from "~/components/form-error";
+import { User, Lock } from 'tabler-icons-react';
+import { useState } from "react";
+import FormLabel from "~/components/form-label";
 
 export const meta: MetaFunction = () => {
   return {
@@ -46,10 +54,24 @@ export const action: ActionFunction = async ({
 export default function Login() {
   const actionData = useActionData<FormResult>();
   const [searchParams] = useSearchParams();
+
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  if (actionData?.loginType?.value === 'register') {
+    setMode('register');
+  }
+
+  const setModeRegister = () => {
+    setMode('register');
+  };
+
+  const setModeLogin = () => {
+    setMode('login');
+  };
+
   return (
-    <div className="container">
-      <div className="content" data-light="">
-        <h1>Login</h1>
+    <Wrapper>
+      <Card>
+        <h1>{mode === 'login' ? 'Login' : 'Register'}</h1>
         <Form
           method="post"
           aria-describedby={
@@ -65,104 +87,35 @@ export default function Login() {
               searchParams.get("redirectTo") ?? undefined
             }
           />
-          <fieldset>
-            <legend className="sr-only">
-              Login or Register?
-            </legend>
-            <label>
-              <input
-                type="radio"
-                name="loginType"
-                value="login"
-                defaultChecked={
-                  !actionData?.loginType?.value ||
-                  actionData?.loginType?.value === "login"
-                }
-              />{" "}
-              Login
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="loginType"
-                value="register"
-                defaultChecked={
-                  actionData?.loginType?.value ===
-                  "register"
-                }
-              />{" "}
-              Register
-            </label>
-          </fieldset>
-          <div>
-            <label htmlFor="username-input">Username</label>
-            <input
-              type="text"
-              id="username-input"
-              name="username"
-              defaultValue={actionData?.username?.value}
-              aria-invalid={Boolean(
-                actionData?.username?.error
-              )}
-              aria-describedby={
-                actionData?.username?.error
-                  ? "username-error"
-                  : undefined
-              }
-            />
-            {actionData?.username?.error ? (
-              <p
-                className="form-validation-error"
-                role="alert"
-                id="username-error"
-              >
-                {actionData?.username.error}
-              </p>
-            ) : null}
-          </div>
-          <div>
-            <label htmlFor="password-input">Password</label>
-            <input
-              id="password-input"
-              name="password"
-              defaultValue={actionData?.password?.value}
-              type="password"
-              aria-invalid={
-                Boolean(
-                  actionData?.password?.error
-                ) || undefined
-              }
-              aria-describedby={
-                actionData?.password?.error
-                  ? "password-error"
-                  : undefined
-              }
-            />
-            {actionData?.password?.error ? (
-              <p
-                className="form-validation-error"
-                role="alert"
-                id="password-error"
-              >
-                {actionData?.password.error}
-              </p>
-            ) : null}
-          </div>
-          <div id="form-error-message">
-            {actionData?._global?.error ? (
-              <p
-                className="form-validation-error"
-                role="alert"
-              >
-                {actionData?._global?.error}
-              </p>
-            ) : null}
-          </div>
-          <button type="submit" className="button">
-            Submit
-          </button>
+
+            <Stack size="medium">
+              <Stack size="small">
+                <FormLabel htmlFor="username">Username</FormLabel>
+                <TextField start={<User></User>} formResult={actionData?.username} name="username"></TextField>
+                <FormError formResult={actionData?.username} name="username"></FormError>
+              </Stack>
+              <Stack size="small">
+                <FormLabel htmlFor="password">Password</FormLabel>
+                <TextField start={<Lock></Lock>} formResult={actionData?.username} name="password" id="password" type="password"></TextField>
+                <FormError formResult={actionData?.password} name="password"></FormError>
+              </Stack>
+              <FormError formResult={actionData?._global} name="_global"></FormError>
+              <Button variant="fill" size="small" type="submit" name="loginType" value={mode}>Submit</Button>
+              {mode === 'login'
+                ? <Button variant="ghost" size="small" onClick={setModeRegister} type="button">Create an account</Button>
+                : <Button variant="ghost" size="small" onClick={setModeLogin} type="button">Login</Button>
+              }          
+            </Stack>
         </Form>
-      </div>
-    </div>
+      </Card>
+    </Wrapper>
   );
 }
+
+const Wrapper = styled.div`
+  width: var(--small-container-width);
+  max-width: calc(100% - var(--gutter) * 2);
+  margin-top: var(--gutter);
+  margin-right: auto;
+  margin-left: auto;
+`;

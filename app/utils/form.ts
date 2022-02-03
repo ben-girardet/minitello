@@ -1,8 +1,10 @@
+export type SingleFormResult = {
+  error?: string;
+  value?: string;
+};
+
 export type FormResult<Key extends string = string> = {
-  [key in Key]: {
-    error?: string;
-    value?: string;
-  };
+  [key in Key]: SingleFormResult;
 };
 
 export function isString(value: any): value is string {

@@ -28,11 +28,8 @@ const ContextualMenu: FunctionComponent<ContextualMenuProps> = ({hidden, onHide,
     return null;
   }
 
-  console.log('pointerPosition', pointerPosition);
-
   const rect = anchor.getBoundingClientRect();
   const w = window.innerWidth;
-  console.log('w', w);
   const h = window.innerHeight;
   const scrollTop = window.screenTop;
   const scrollLeft = window.screenLeft;
@@ -71,8 +68,6 @@ const ContextualMenu: FunctionComponent<ContextualMenuProps> = ({hidden, onHide,
     // more room on left
     position.right = `${w - anchorX}px`;
   }
-
-  console.log('position', position);
 
   return ReactDOM.createPortal(
     <>

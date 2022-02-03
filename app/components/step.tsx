@@ -30,7 +30,6 @@ export function Step({step}: {step: StepWithChildren}) {
   const [pointerPosition, setPointerPosition] = useState<{x: number, y: number} | null>(null);
   
   function openMoreMenu(event: MouseEvent | TouchEvent) {
-    console.log('event', event);
     setMenuAnchor(event.target as HTMLElement | null);
     setIsMenuOpened(true);
     if (event.type === 'click') {
@@ -110,7 +109,7 @@ const Indicator = styled.button`
   flex-shrink: 0;
   text-align: center;
   color: var(--primary);
-  background: transparent;
+  background: var(--primary-contrast);
   border: none;
   cursor: pointer;
 `;
