@@ -1,5 +1,6 @@
 import {
   Links,
+  LinksFunction,
   LiveReload,
   Meta,
   Outlet,
@@ -11,6 +12,15 @@ import GlobalStyles from './global-styles';
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
+};
+
+export const links: LinksFunction = () => {
+  return [
+    {
+      rel: "stylesheet",
+      href: 'https://fonts.googleapis.com/css?family=Nunito+Sans|Titillium+Web:600,800&display=swap'
+    },
+  ];
 };
 
 export default function App() {
