@@ -11,10 +11,9 @@ export function isString(value: any): value is string {
   return typeof value === 'string';
 }
 
-export function FormResultGlobalError(message: string): FormResult {
-  const result: FormResult = {
-    _global: {error: message}
-  };
+export function FormResultGlobalError(message: string, key = '_global'): FormResult {
+  const result: FormResult = {};
+  result[key] = {error: message};
   return result;
 }
 

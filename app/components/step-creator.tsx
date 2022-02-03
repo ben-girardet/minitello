@@ -1,19 +1,41 @@
-import { Step  as StepModel } from '@prisma/client';
-import { ChevronRight, CircleCheck, Dots } from 'tabler-icons-react';
-import { useFetcher } from 'remix';
+import { ChevronRight } from 'tabler-icons-react';
+import { Form } from 'remix';
 import styled from 'styled-components';
-import React, { useState, MouseEvent } from 'react';
+import { FunctionComponent, ComponentPropsWithRef } from 'react';
+import { SingleFormResult } from '~/utils/form';
+import Spinner from './spinner';
 
-
-export function StepCreator() {
+type StepCreatorProp = {
+  projectId: string;
+  parentStepId: string;
+  formResult?: SingleFormResult;
+  processing?: boolean;
+}
+const StepCreator: FunctionComponent<ComponentPropsWithRef<'form'> & StepCreatorProp> = ({projectId, parentStepId, formResult, processing, ref}) => {
 
   return (
-    <Wrapper>
-      <InputField placeholder='Write your next step'></InputField>
-      <Save>
-        <ChevronRight></ChevronRight>
-      </Save>
-    </Wrapper>
+      <Form method="post">
+        <Wrapper>
+            <input type="hidden" name="projectId" value={projectId}></input>
+            <input type="hidden" name="parentStepId" value={parentStepId}></input>
+            <InputField className="step-creator" placeholder='Write your next step' name="name"></InputField>
+            {processing ? (
+              <div style={{"width": '32px', "height": '26px', opacity: 0.5}}>
+                <Spinner></Spinner>
+              </div>
+              ) : (
+              <Save type="submit" name="_action" value="create-step">
+                <ChevronRight></ChevronRight>
+              </Save>
+            )}
+        </Wrapper>
+        {formResult?.error ? (
+          <Wrapper>
+            <ErrorContainer>{formResult?.error}</ErrorContainer>
+          </Wrapper>
+        ) : undefined }
+        
+      </Form>
   )
 }
 
@@ -39,52 +61,10 @@ const Save = styled.button`
   border: none;
   background: none;
 `;
-const Main = styled.div`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  cursor: pointer;
-  outline-offset: 4px;
+const ErrorContainer = styled.div`
+  margin-top: -8px;
+  margin-left: 42px;
+  color: var(--error);
 `;
-const Indicator = styled.button`
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  text-align: center;
-  color: var(--primary);
-  background: var(--primary-contrast);
-  border: none;
-`;
-const Name = styled.div`
-  width: 100%;
-`;
-const More = styled.button`
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  background: transparent;
-  border: none;
-`;
-const WhenOpenedWrapper = styled.div``;
-const Children = styled.div``;
 
-/*
-.step-creator input {
-  width: 100%;
-  font-size: 16px;;
-}
-.step-creator-inactive {
-  opacity: 0.5;
-}
-.step-creator .step-indicator {
-  opacity: 0.5;
-}
-.step-creator:not(.step-creator-can-save) .step-more {
-  opacity: 0.5;
-}
-.step-creator:not(.step-creator-is-started) .step-indicator > * {
-  visibility: hidden;
-}
-*/
+export default StepCreator;
