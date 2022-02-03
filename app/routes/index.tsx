@@ -27,7 +27,3 @@ export default function Index() {
     </div>
   );
 }
-
-const Button = styled.button`
-  background: var(--primary);
-`;
