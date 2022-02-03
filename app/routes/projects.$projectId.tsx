@@ -1,6 +1,8 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { redirect, useLoaderData } from "remix";
+import { Link, redirect, useLoaderData } from "remix";
 import styled from "styled-components";
+import { ChevronLeft } from "tabler-icons-react";
+import Button from "~/components/button";
 import Stack from "~/components/stack";
 import { Step } from "~/components/step";
 import { StepCreator } from "~/components/step-creator";
@@ -51,7 +53,14 @@ export default function Index() {
   return (
     <Wrapper>
       <Stack size="large">
-        <h1>{project.name}</h1>
+        <h1>
+          <Link to="../projects">
+            <Button variant="ghost" size="medium">
+              <ChevronLeft></ChevronLeft>
+            </Button>
+            </Link>
+          {project.name}
+        </h1>
         <div>
           {steps.map(step => (
             <Step step={step} key={step.id}></Step>

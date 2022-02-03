@@ -1,29 +1,25 @@
-// Route rendered on /
+import { LoaderFunction, MetaFunction, redirect } from "remix";
+import { getUserId } from "~/utils/session.server";
 
-import { useLoaderData } from "remix";
-import styled from "styled-components";
-import { db } from '~/utils/db.server';
-import { Step } from '~/components/step';
-import * as ReactDOM from 'react-dom';
-import React from 'react';
-import ContextualMenu from "~/components/contextual-menu";
-import { StepCreator } from "~/components/step-creator";
+export const loader: LoaderFunction = async ({
+  request
+}) => {
+  const userId = await getUserId(request);
+  if (!userId) {
+    return redirect('/login');
+  }
+  return redirect('/projects');
+};
 
-export const loader = async () => {
-  const steps = await db.step.findMany();
-  return {steps};
-}
 
-export default function Index() {
+export const meta: MetaFunction = () => {
+  return {
+    title: "Minitello",
+    description:
+      "Handle your projects with ease"
+  };
+};
 
-  const {steps} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
-
-  return (
-    <div>
-      {steps.map(step => (
-        <Step step={step} key={step.id}></Step>
-      ))}
-      <StepCreator></StepCreator>
-    </div>
-  );
+export default function IndexRoute() {
+  return (<></>);
 }
