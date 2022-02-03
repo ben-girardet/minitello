@@ -15,10 +15,10 @@ export function Step({step}: {step: StepWithChildren}) {
   const fetcher = useFetcher();
 
   function toggleProgress() {
-    const action = 'toggle-progress';
+    const _action = 'toggle-progress';
     const projectId = step.projectId as string;
     const stepId = step.id;
-    fetcher.submit({action, projectId, stepId}, {method: 'put', action: `/projects/${projectId}`});
+    fetcher.submit({_action, projectId, stepId}, {method: 'put', action: `/projects/${projectId}`});
   }
 
   function toggleStepDetails() {

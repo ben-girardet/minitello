@@ -42,6 +42,7 @@ export class StepUtil {
     if (!project) {
       throw FormResultGlobalError('Project not found');
     }
+    // TODO: ensure the user has the right to write in this project
 
     const parentStep = await db.step.findUnique({where: {id: parentStepId}});
     if (!parentStep) {
@@ -49,8 +50,6 @@ export class StepUtil {
     } else if (parentStep.projectId !== projectId && parentStepId !== projectId) {
       throw FormResultGlobalError('Invalid parent step, wrong project');
     }
-
-    // TODO: ensure the user has the right to write in this project
 
     const newStep = await db.step.create({
       data: {
@@ -62,6 +61,38 @@ export class StepUtil {
     });
 
     return newStep;
+  }
+
+  public static async toggleProgress({form, userId}: {form: FormData, userId: string}): Promise<Step> {
+    const projectId = form.get("projectId");
+    const stepId = form.get("stepId");
+
+    if (
+      !isString(projectId) ||
+      !isString(stepId)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+
+    const project = await db.step.findUnique({where: {id: projectId}});
+    if (!project) {
+      throw FormResultGlobalError('Project not found');
+    }
+    // TODO: ensure the user has the right to write in this project
+
+    const step = await db.step.findUnique({where: {id: stepId}});
+    if (!step) {
+      throw FormResultGlobalError('Step not found');
+    } else if (step.projectId !== projectId) {
+      throw FormResultGlobalError('Invalid step, wrong project');
+    }
+
+    const newProgress = step.progress === 1 ? 0 : 1;
+
+    // TODO: here we must do something to compute the progress of children and parents of this step
+    const updatedStep = await db.step.update({where: {id: stepId}, data: {progress: newProgress}});  
+
+    return updatedStep;
   }
 
 }

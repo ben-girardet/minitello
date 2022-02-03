@@ -1,12 +1,12 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { FunctionComponent, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, useTransition } from "remix";
 import styled from "styled-components";
 import { ChevronLeft } from "tabler-icons-react";
 import Button from "~/components/button";
 import Stack from "~/components/stack";
 import { Step } from "~/components/step";
-import StepCreator, { StepCreatorProp } from "~/components/step-creator";
+import StepCreator from "~/components/step-creator";
 import { db } from "~/utils/db.server";
 import { FormResult, getFormDataAsString, isString, FormResultGlobalError } from "~/utils/form";
 import { getUser, requireUserId } from "~/utils/session.server";
@@ -63,6 +63,10 @@ export const action: ActionFunction = async ({
         throw FormResultGlobalError(`Failed to create the step`);
       }
       return newStep;
+    } else if (action === 'toggle-progress') {
+      return await StepUtil.toggleProgress({form, userId});
+    } else {
+      throw FormResultGlobalError(`Invalid action`);
     }
   } catch (error) {
     return json(error as FormResult, {status: 400});
