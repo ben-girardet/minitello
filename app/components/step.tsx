@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import React, { useState, MouseEvent, TouchEvent } from 'react';
 import ContextualMenu from './contextual-menu';
 import ContextualMenuButton from './contextual-menu-button';
+import StepCreator from './step-creator';
 
 export interface StepWithChildren extends StepModel {
   children?: StepWithChildren[];
@@ -13,6 +14,7 @@ export interface StepWithChildren extends StepModel {
 export function Step({step}: {step: StepWithChildren}) {
 
   const fetcher = useFetcher();
+  const [opened, setOpened] = useState<boolean>(false);
 
   function toggleProgress() {
     const _action = 'toggle-progress';
@@ -23,6 +25,7 @@ export function Step({step}: {step: StepWithChildren}) {
 
   function toggleStepDetails() {
     console.log('toggleStepDetails');
+    setOpened(!opened);
   }
 
   const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
@@ -59,13 +62,16 @@ export function Step({step}: {step: StepWithChildren}) {
           <Dots className="icon" />
         </More>
       </Main>
-      <WhenOpenedWrapper>
-        <Children>
-          {step.children ? step.children.map((child) => (
-            <Step step={child}></Step>
-            )) : undefined}
-        </Children>
-      </WhenOpenedWrapper>
+      {opened ? (
+        <WhenOpenedWrapper>
+          <Children>
+            {step.children ? step.children.map((child) => (
+              <Step step={child}></Step>
+              )) : undefined}
+          </Children>
+          <StepCreator projectId={step.projectId!} parentStepId={step.id}></StepCreator>
+        </WhenOpenedWrapper>
+      ) : undefined}
       <ContextualMenu hidden={!isMenuOpened} onHide={hideMoreMenu} anchor={menuAnchor} pointerPosition={pointerPosition}>
         <ContextualMenuButton>
           <Copy></Copy>
@@ -86,11 +92,11 @@ export function Step({step}: {step: StepWithChildren}) {
 
 const Wrapper = styled.div`
   padding: 8px;
+  gap: 8px;
   background: hsl(0, 0%, 100%);
   margin: 1px 0;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   color: var(--color-foreground);
   cursor: pointer;
 `;
@@ -124,24 +130,7 @@ const More = styled.button`
   border: none;
   cursor: pointer;
 `;
-const WhenOpenedWrapper = styled.div``;
-const Children = styled.div``;
+const WhenOpenedWrapper = styled.div`
 
-/*
-.step-creator input {
-  width: 100%;
-  font-size: 16px;;
-}
-.step-creator-inactive {
-  opacity: 0.5;
-}
-.step-creator .step-indicator {
-  opacity: 0.5;
-}
-.step-creator:not(.step-creator-can-save) .step-more {
-  opacity: 0.5;
-}
-.step-creator:not(.step-creator-is-started) .step-indicator > * {
-  visibility: hidden;
-}
-*/
+`;
+const Children = styled.div``;

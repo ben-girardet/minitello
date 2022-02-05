@@ -34,13 +34,7 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
     throw new Error('Project not found');
   }
 
-  // TODO: ensure current user has the rights on the project
-
-  const steps = await db.step.findMany({
-    where: {
-      projectId
-    }
-  });
+  const steps = await StepUtil.getStepsWithParentId(projectId, user);
 
   const data = {
     project,

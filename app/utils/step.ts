@@ -95,4 +95,29 @@ export class StepUtil {
     return updatedStep;
   }
 
+  public static async getStepsWithParentId(parentStepId: string, user: User): Promise<Step[]> {
+    const parentStep = await db.step.findUnique({where: {id: parentStepId}});
+    if (!parentStep) {
+      throw new Error('Parent step not found');
+    }
+
+    const isParentStepProject = !parentStep.parentStepId || parentStep.parentStepId === parentStep.projectId;
+
+    const userProject = await db.userProjects.findFirst({where: {
+      userId: user.id,
+      projectId: isParentStepProject ? parentStep.id : parentStep.projectId!
+    }});
+    
+    if (!userProject || userProject.role !== 'MANAGER' || userProject.role !== 'MANAGER') {
+      throw new Error('Access denied');
+    }
+
+    const steps = await db.step.findMany({
+      where: {
+        parentStepId
+      }
+    });
+    return steps;
+  }
+
 }

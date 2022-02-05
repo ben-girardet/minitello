@@ -14,6 +14,11 @@ const Wrapper = styled.button`
   align-items: center;
   gap: 8px;
   width: 100%;
+  cursor: pointer;
+
+  :hover {
+    background: var(--primary-very-light);
+  }
 `;
 
 export default ContextualMenuButton;

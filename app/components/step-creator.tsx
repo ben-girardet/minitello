@@ -18,13 +18,14 @@ const StepCreator: FunctionComponent<ComponentPropsWithRef<'form'> & StepCreator
         <Wrapper>
             <input type="hidden" name="projectId" value={projectId}></input>
             <input type="hidden" name="parentStepId" value={parentStepId}></input>
+            <input type="hidden" name="_action" value="create-step"></input>
             <InputField className="step-creator" placeholder='Write your next step' name="name"></InputField>
             {processing ? (
               <div style={{"width": '32px', "height": '26px', opacity: 0.5}}>
                 <Spinner></Spinner>
               </div>
               ) : (
-              <Save type="submit" name="_action" value="create-step">
+              <Save type="submit">
                 <ChevronRight></ChevronRight>
               </Save>
             )}
@@ -60,6 +61,7 @@ const InputField = styled.input`
 const Save = styled.button`
   border: none;
   background: none;
+  cursor: pointer;
 `;
 const ErrorContainer = styled.div`
   margin-top: -8px;
