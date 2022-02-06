@@ -2,6 +2,10 @@ import { Step, User } from "@prisma/client";
 import { db } from "./db.server";
 import { FormResult, FormResultGlobalError, isString } from "./form";
 
+export interface StepWithChildren extends Step {
+  children?: StepWithChildren[];
+  parent?: StepWithChildren;
+}
 export class StepUtil {
 
   public static validateName(name: unknown) {
@@ -93,6 +97,72 @@ export class StepUtil {
     const updatedStep = await db.step.update({where: {id: stepId}, data: {progress: newProgress}});  
 
     return updatedStep;
+  }
+
+  // TODO: add selectors to avoid fetching all data
+  public static async getProjectsSteps({
+    project,
+    user,
+    select,
+    computeChildren,
+    computeParent,
+  }: {
+    project: {id: string},
+    user: User,
+    // the any here comes because I cannot import the `StepSelect` type
+    // from @prisma/client
+    select?: any,
+    computeChildren?: boolean,
+    computeParent?: boolean,
+  }): Promise<StepWithChildren[]> {
+  
+    const userProject = await db.userProjects.findFirst({where: {
+      userId: user.id,
+      projectId: project.id
+    }});
+
+    if (!userProject) {
+      throw new Error('Access denied');
+    }
+
+    // TODO: query selectors ??
+    const projectStep = await db.step.findUnique({where: {id: project.id}, select});
+    if (!projectStep) {
+      throw new Error('Project not found');
+    }
+    
+    const steps: StepWithChildren[] = await db.step.findMany({
+      where: {
+        projectId: project.id
+      }
+    });
+
+    
+    if (computeChildren || computeParent) {
+      // compute a temporary horizontal map of all children
+      const hSteps: {[key: string]: StepWithChildren} = {};
+      steps.reduce((hSteps, step) => {
+        // using this reduce step to prepare the children array
+        step.children = [];
+        hSteps[step.id] = step;
+        return hSteps;
+      }, hSteps);
+
+      // build the hierarchical tree using the hSteps map
+      for (const step of steps) {
+        if (step.parentStepId && hSteps[step.parentStepId]) {
+          const parentStep = hSteps[step.parentStepId];
+          if (computeChildren) {
+            parentStep.children!.push(step);
+          }
+          if (computeParent) {
+            step.parent = parentStep;
+          }
+        }
+      }
+    }
+
+    return steps;
   }
 
   public static async getStepsWithParentId(parentStepId: string, user: User): Promise<Step[]> {

@@ -16,7 +16,8 @@ export function Step({step}: {step: StepWithChildren}) {
   const fetcher = useFetcher();
   const [opened, setOpened] = useState<boolean>(false);
 
-  function toggleProgress() {
+  function toggleProgress(event: MouseEvent) {
+    event.stopPropagation();
     const _action = 'toggle-progress';
     const projectId = step.projectId as string;
     const stepId = step.id;
@@ -131,6 +132,14 @@ const More = styled.button`
   cursor: pointer;
 `;
 const WhenOpenedWrapper = styled.div`
+  padding-left: 32px;
+  margin-right: -8px;
 
+  & > form {
+    opacity: 0.4;
+  }
+  & > form:hover {
+    opacity: 1;
+  }
 `;
 const Children = styled.div``;

@@ -34,12 +34,14 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
     throw new Error('Project not found');
   }
 
-  const steps = await StepUtil.getStepsWithParentId(projectId, user);
+  const steps = await StepUtil.getProjectsSteps({project, user, computeChildren: true});
+
+  console.log('steps', steps);
 
   const data = {
     project,
     user,
-    steps,
+    steps: steps.filter(s => !s.parentStepId || s.parentStepId === projectId),
   };
   return data;
 }
