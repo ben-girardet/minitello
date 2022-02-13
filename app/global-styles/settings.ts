@@ -3,22 +3,37 @@ import { css } from 'styled-components';
 export default css`
 :root {
 
-  --primary: hsl(165deg 87% 36%);
-  --primary-contrast: white;
-  --primary-light: hsl(165deg 87% 45%);
-  --primary-light-contrast: white;
-  --primary-dark: hsl(165deg 87% 25%);
-  --primary-dark-contrast: white;
-  --primary-very-light: hsl(165deg 87% 95%);
-  --primary-very-light-contrast: black;
-  --primary-very-dark: hsl(165deg 87% 15%);
-  --primary-very-dark-contrast: white;
+  --primary-hue: 165deg;
+  --error-hue: 0deg;
+  --intense: 87% 36%;
+  --intense-contrast: white;
+  --light: 87% 45%;
+  --light-contrast: black;
+  --very-light: 87% 95%;
+  --very-light-contrast: black;
+  --dark: 87% 25%;
+  --dark-contrast: white;
+  --very-dark: 87% 5%;
+  --very-dark-contrast: white;
+  
 
-  --error: hsl(0deg 50% 50%);
-  --error-contrast: white;
 
-  --background: hsl(165deg 87% 95%);
-  --foreground: black;
+  --primary: hsl(var(--primary-hue) var(--intense));
+  --primary-contrast: var(--intense-contrast);
+  --primary-light: hsl(var(--primary-hue) var(--light));
+  --primary-light-contrast: var(--light-contrast);
+  --primary-dark: hsl(var(--primary-hue) var(--dark));
+  --primary-dark-contrast: var(--dark-contrast);
+  --primary-very-light: hsl(var(--primary-hue) var(--very-light));
+  --primary-very-light-contrast: var(--very-light-contrast);
+  --primary-very-dark: hsl(var(--primary-hue) var(--very-dark));
+  --primary-very-dark-contrast: var(--very-dark-contrast);
+
+  --error: hsl(var(--error-hue) var(--intense));
+  --error-contrast: var(--intense-contrast);
+
+  --background: hsl(var(--primary-hue) var(--very-light));
+  --foreground: var(--very-light-contrast);
 
   --modal-layer-background: white;
   --modal-layer-foreground: var(--foreground);

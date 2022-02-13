@@ -9,6 +9,8 @@ import {
 } from "remix";
 import type { MetaFunction } from "remix";
 import GlobalStyles from './global-styles';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
@@ -38,7 +40,9 @@ export default function App() {
       </head>
       <body>
         <GlobalStyles />
-        <Outlet />
+        <DndProvider backend={HTML5Backend}>
+          <Outlet />
+        </DndProvider>
         <ScrollRestoration />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}

@@ -2,16 +2,113 @@ import { Step  as StepModel } from '@prisma/client';
 import { Circle, CircleCheck, Dots, Copy, Trash, DragDrop2 } from 'tabler-icons-react';
 import { useFetcher } from 'remix';
 import styled from 'styled-components';
-import React, { useState, MouseEvent, TouchEvent } from 'react';
+import React, { useState, MouseEvent, TouchEvent, useEffect, useRef } from 'react';
 import ContextualMenu from './contextual-menu';
 import ContextualMenuButton from './contextual-menu-button';
 import StepCreator from './step-creator';
+import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd'
 
 export interface StepWithChildren extends StepModel {
   children?: StepWithChildren[];
 }
 
 export function Step({step}: {step: StepWithChildren}) {
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isDraggingRight, setIsDraggingRight] = useState<boolean>(false);
+
+  // drag-and-drop (DND) implementation
+  const [{ opacity }, dragRef] = useDrag(
+    () => ({
+      type: 'STEP',
+      item: { step },
+      collect: (monitor) => {
+        setIsDragging(monitor.isDragging());
+        return {opacity: monitor.isDragging() ? 0.5 : 1};
+      },
+    }),
+    []
+  );
+
+  useEffect(() => {
+    document.body.classList.toggle('step-dragging', isDragging);
+  }, [isDragging]);
+
+  const dragHover = (position: 'above' | 'below') => {
+    return (item: unknown, monitor: DropTargetMonitor<unknown, void>) => {
+      const i: any = item;
+      const hasChildren = !!step.children?.length;
+      setIsDraggingRight((monitor.getDifferenceFromInitialOffset()?.x || 0) > 40 && !hasChildren && position === 'below');
+      const clientX = monitor.getClientOffset()?.x;
+      const clientY = monitor.getClientOffset()?.y;
+      const hasMoved = (
+        i._dragHoverClientX !== undefined
+        && i._dragHoverClientY !== undefined
+        && i._dragHoverClientX !== clientX
+        && i._dragHoverClientY !== clientY
+      );
+      if (i._dragHoverTimeout !== undefined && hasMoved) {
+        clearTimeout(i._dragHoverTimeout);
+        i._dragHoverTimeout = undefined;
+      }
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || clientY === undefined) {
+        return;
+      }
+      const isNotCloseToTheEdge = clientY > rect.y + 5 && clientY < rect.y + rect.height - 5;
+      if (!opened && rect && isNotCloseToTheEdge && !i._dragHoverTimeout) {
+        const t = setTimeout(() => {
+          // checking isOver here ensure that the timeout happens when the drag is still active
+          if (monitor.isOver()) {
+            setOpened(true);
+          }
+        }, 2000);
+        i._dragHoverTimeout = t;
+        i._dragHoverClientX = clientX;
+        i._dragHoverClientY = clientY;
+      } else if (!isNotCloseToTheEdge) {
+        clearTimeout(i._dragHoverTimeout);
+        i._dragHoverTimeout = undefined;
+        i._dragHoverClientX = undefined;
+        i._dragHoverClientY = undefined;
+      }
+    };
+  }
+
+  const drop = (item: unknown, monitor: DropTargetMonitor<unknown, void>) => {
+    const i: any = item;
+    clearTimeout(i._dragHoverTimeout);
+    i._dragHoverTimeout = undefined;
+    i._dragHoverClientX = undefined;
+    i._dragHoverClientY = undefined;
+  };
+
+  const [{ opacityAbove }, dropAboveRef] = useDrop(
+    () => ({
+      accept: 'STEP',
+      drop: drop,
+      hover: dragHover('above'),
+      // canDrop: () => {},
+      collect: (monitor) => {
+        return {
+          opacityAbove: monitor.isOver({shallow: true}) ? 1 : 0
+        }
+      },
+    })
+  );
+
+  const [{ opacityBelow }, dropBelowRef] = useDrop(
+    () => ({
+      accept: 'STEP',
+      drop: () => {},
+      hover: dragHover('below'),
+      // canDrop: () => {},
+      collect: (monitor) => ({
+        opacityBelow: monitor.isOver({shallow: true}) ? 1 : 0
+      }),
+    })
+  );
 
   const fetcher = useFetcher();
   const [opened, setOpened] = useState<boolean>(false);
@@ -25,7 +122,6 @@ export function Step({step}: {step: StepWithChildren}) {
   }
 
   function toggleStepDetails() {
-    console.log('toggleStepDetails');
     setOpened(!opened);
   }
 
@@ -49,7 +145,8 @@ export function Step({step}: {step: StepWithChildren}) {
   }
 
   return (
-    <Wrapper>
+    <Wrapper ref={dragRef} style={{ opacity }}>
+      <BoxRef ref={containerRef}></BoxRef>
       <Main tabIndex={0} onClick={toggleStepDetails}>
         <Indicator onClick={toggleProgress}>
          {step.progress === 1 ?
@@ -87,11 +184,14 @@ export function Step({step}: {step: StepWithChildren}) {
           Delete
           </ContextualMenuButton>
       </ContextualMenu>
+      <DropAbove ref={dropAboveRef} style={{opacity: opacityAbove, marginLeft: isDraggingRight ? '40px' : '0px'}}></DropAbove>
+      <DropBelow ref={dropBelowRef} style={{opacity: opacityBelow, marginLeft: isDraggingRight ? '40px' : '0px'}}></DropBelow>
     </Wrapper>
   )
 }
 
 const Wrapper = styled.div`
+  position: relative;
   padding: 8px;
   gap: 8px;
   background: hsl(0, 0%, 100%);
@@ -100,6 +200,14 @@ const Wrapper = styled.div`
   flex-direction: column;
   color: var(--color-foreground);
   cursor: pointer;
+`;
+const BoxRef = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
 `;
 const Main = styled.div`
   width: 100%;
@@ -143,3 +251,44 @@ const WhenOpenedWrapper = styled.div`
   }
 `;
 const Children = styled.div``;
+
+const DropBase = styled.div`
+  position: absolute;
+  width: 100%;
+  left: 0;
+  height: 25px;
+  pointer-events: none;
+
+  body.step-dragging & {
+    pointer-events: revert;
+  }
+
+  ::before {
+    content: ' ';
+    position: absolute;
+    border-top: 2px solid red;
+    width: 100%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+  }
+`;
+const DropAbove = styled(DropBase)`
+  top: 0;
+
+  // dropAbove and DropBelow have different offset so they collapse visuallly
+  ::before {
+    // the fact that DropAbove have a bigger number is because it comes after in the
+    // DOM and is therefore place above in terms of z-index. This ensure that 
+    // the DropBelow is also perfectly visible
+    top: -2px;
+  }
+  `;
+const DropBelow = styled(DropBase)`
+  bottom: 0;
+
+  // dropAbove and DropBelow have different offset so they collapse visuallly
+  ::before {
+    bottom: -1px;
+  }
+`;
