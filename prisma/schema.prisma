@@ -38,15 +38,16 @@ model Step {
   progress      Float       @default(0)
 
   createdById   String
-  createdBy     User     @relation(fields: [createdById], references: [id], onDelete: Cascade, name: "CreatedBy")
+  createdBy     User        @relation(fields: [createdById], references: [id], onDelete: Cascade, name: "CreatedBy")
 
   members       UserProjects[]
 
   projectId     String?
-  project       Step?     @relation(fields: [projectId], references: [id], onDelete: Cascade, name: "Project")
-  projectSteps  Step[]   @relation(name: "Project")
+  project       Step?       @relation(fields: [projectId], references: [id], onDelete: Cascade, name: "Project")
+  projectSteps  Step[]      @relation(name: "Project")
 
   parentStepId  String?
-  parentStep    Step?      @relation(fields: [parentStepId], references: [id], onDelete: Cascade, name: "OneToMany")
-  childrenSteps Step[]  @relation(name: "OneToMany")
+  parentStep    Step?       @relation(fields: [parentStepId], references: [id], onDelete: Cascade, name: "OneToMany")
+  childrenSteps Step[]      @relation(name: "OneToMany")
+  order         Int
 }

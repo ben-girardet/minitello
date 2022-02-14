@@ -61,6 +61,8 @@ export const action: ActionFunction = async ({
       return newStep;
     } else if (action === 'toggle-progress') {
       return await StepUtil.toggleProgress({form, userId});
+    } else if (action === 'move-step') {
+      return await StepUtil.moveStep({form, userId});
     } else {
       throw FormResultGlobalError(`Invalid action`);
     }

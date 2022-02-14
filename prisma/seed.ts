@@ -23,6 +23,7 @@ async function seed() {
       return prisma.step.create({data: {
         name: data.name,
         createdById: ben.id,
+        order: 0,
         members: {
           create: {
             user: {
@@ -35,17 +36,19 @@ async function seed() {
         }
       }}).then(async (project: any) => {
         if (data.steps?.length) {
+          let order = 0;
           for (const stepName of data.steps) {
             await prisma.step.create({data: {
               name: stepName,
               createdById: ben.id,
+              order,
               parentStepId: project.id,
               projectId: project.id
             }})
+            order += 1;
           }
         }
-      })
-
+      });
     })
   );
 }

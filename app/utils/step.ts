@@ -1,6 +1,6 @@
 import { Step, User } from "@prisma/client";
 import { db } from "./db.server";
-import { FormResult, FormResultGlobalError, isString } from "./form";
+import { FormResult, FormResultGlobalError, isNumber, isString } from "./form";
 
 export interface StepWithChildren extends Step {
   children?: StepWithChildren[];
@@ -26,6 +26,7 @@ export class StepUtil {
     const projectId = form.get("projectId");
     const name = form.get("name");
     const parentStepId = form.get("parentStepId");
+    let order = typeof form.get("order") === 'string' ?  parseInt(form.get("order") as string, 10) : -1;
 
     const result: FormResult = {_global: {}};
     if (
@@ -55,12 +56,18 @@ export class StepUtil {
       throw FormResultGlobalError('Invalid parent step, wrong project');
     }
 
+    if (order === -1) {
+      const nbExistingChildren = await db.step.count({where: {parentStepId}});
+      order = nbExistingChildren;
+    }
+
     const newStep = await db.step.create({
       data: {
         name,
         projectId,
         createdById: userId,
         parentStepId: parentStepId,
+        order,
       }
     });
 
@@ -99,6 +106,116 @@ export class StepUtil {
     return updatedStep;
   }
 
+  public static async moveStep({form, userId}: {form: FormData, userId: string}): Promise<Step> {
+    const projectId = form.get("projectId");
+    const stepId = form.get("stepId");
+    const newParentStepId = form.get("newParentStepId");
+    
+    if (
+      !isString(projectId) ||
+      !isString(stepId) ||
+      !isString(newParentStepId) ||
+      typeof form.get("newOrder") !== 'string'
+      ) {
+        throw FormResultGlobalError(`Form not submitted correctly.`);
+      }
+    const newOrder = parseInt(form.get("newOrder") as string, 10);
+
+    const project = await db.step.findUnique({where: {id: projectId}});
+    if (!project) {
+      throw FormResultGlobalError('Project not found');
+    }
+    // TODO: ensure the user has the right to write in this project
+
+    const step = await db.step.findUnique({where: {id: stepId}});
+    if (!step) {
+      throw FormResultGlobalError('Step not found');
+    } else if (step.projectId !== projectId) {
+      throw FormResultGlobalError('Invalid step, wrong project');
+    }
+
+    if (newParentStepId === step.parentStepId) {
+      // the step is moving inside the same parent, therfore changing order
+      if (step.order === newOrder) {
+        return step;
+      }
+
+      // 0 - ABC
+      // 1 - DEF
+      // 2 - GHI
+      // 3 - JKL
+      // 4 - MNO
+      // 5 - PQR
+
+      // Move UP
+      // Move (step.order) 1 ->  (newOrder) 4
+      // Increment (-1) steps from 2 to 4
+      
+      // 0 - ABC
+      // 1 - GHI (-1)
+      // 2 - JKL (-1)
+      // 3 - MNO (-1)
+      // 4 - DEF (newOrder)
+      // 5 - PQR
+
+      // Move DOWN
+      // Move (step.order) 4 ->  (newOrder) 1
+      // Increment (+1) steps from 1 to 3
+
+      // 0 - ABC
+      // 1 - MNO (newOrder)
+      // 2 - DEF (+1)
+      // 3 - GHI (+1)
+      // 4 - JKL (+1)
+      // 5 - PQR
+
+      const moveUp = step.order < newOrder;
+      const increment = moveUp ? -1 : 1;
+      const incrementFrom = moveUp ? step.order + 1 : newOrder;
+      const incrementTo = moveUp ? newOrder : step.order - 1;
+
+      await db.step.updateMany({
+        where: {
+          parentStepId: step.parentStepId,
+          order: {gte: incrementFrom, lte: incrementTo},
+        }, 
+        data: {
+          order: {increment}
+        }
+      });
+      const updatedStep = await db.step.update({where: {id: step.id}, data: {order: newOrder}});
+      return updatedStep;
+    } else {
+      // the step is moving from one parent to another
+
+      const decrementOriginalFrom = step.order;
+      const incrementNewFrom = newOrder;
+
+      await db.step.updateMany({
+        where: {
+          parentStepId: step.parentStepId,
+          order: {gte: decrementOriginalFrom},
+        }, 
+        data: {
+          order: {increment: -1}
+        }
+      });
+
+      await db.step.updateMany({
+        where: {
+          parentStepId: newParentStepId,
+          order: {gte: incrementNewFrom},
+        }, 
+        data: {
+          order: {increment: 1}
+        }
+      });
+
+      const updatedStep = await db.step.update({where: {id: step.id}, data: {parentStepId: newParentStepId, order: newOrder}});
+      return updatedStep;
+    }
+  }
+
   // TODO: add selectors to avoid fetching all data
   public static async getProjectsSteps({
     project,
@@ -134,10 +251,12 @@ export class StepUtil {
     const steps: StepWithChildren[] = await db.step.findMany({
       where: {
         projectId: project.id
+      },
+      orderBy: {
+        order: 'asc'
       }
     });
 
-    
     if (computeChildren || computeParent) {
       // compute a temporary horizontal map of all children
       const hSteps: {[key: string]: StepWithChildren} = {};
@@ -161,7 +280,6 @@ export class StepUtil {
         }
       }
     }
-
     return steps;
   }
 

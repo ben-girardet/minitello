@@ -28,7 +28,7 @@ export function Step({step}: {step: StepWithChildren}) {
         return {opacity: monitor.isDragging() ? 0.5 : 1};
       },
     }),
-    []
+    [step, step.order]
   );
 
   useEffect(() => {
@@ -76,18 +76,40 @@ export function Step({step}: {step: StepWithChildren}) {
     };
   }
 
-  const drop = (item: unknown, monitor: DropTargetMonitor<unknown, void>) => {
-    const i: any = item;
-    clearTimeout(i._dragHoverTimeout);
-    i._dragHoverTimeout = undefined;
-    i._dragHoverClientX = undefined;
-    i._dragHoverClientY = undefined;
+  const drop = (position: 'above' | 'below') => {
+    return (item: unknown, monitor: DropTargetMonitor<unknown, void>) => {
+      const i: any = item;
+      clearTimeout(i._dragHoverTimeout);
+      i._dragHoverTimeout = undefined;
+      i._dragHoverClientX = undefined;
+      i._dragHoverClientY = undefined;
+
+      let newOrder = -1;
+      const isSameParent = step.parentStepId === i.step.parentStepId;
+      if (position === 'above') {
+        newOrder = !isSameParent || i.step.order >= step.order ? step.order : step.order - 1;
+      } else {
+        newOrder = !isSameParent || i.step.order > step.order ? step.order + 1 : step.order;
+      }
+
+      if (!step.parentStepId) {
+        throw new Error('Missing parentStepId');
+      }
+      if (step.parentStepId === i.step.parentStepId && i.step.order === newOrder) {
+        // if the drop happens in a place where it does not
+        // implies a move, return silently
+        console.log('same order');
+        return;
+      }
+
+      move(i.step.id, step.parentStepId, newOrder);
+    };
   };
 
   const [{ opacityAbove }, dropAboveRef] = useDrop(
     () => ({
       accept: 'STEP',
-      drop: drop,
+      drop: drop('above'),
       hover: dragHover('above'),
       // canDrop: () => {},
       collect: (monitor) => {
@@ -95,19 +117,21 @@ export function Step({step}: {step: StepWithChildren}) {
           opacityAbove: monitor.isOver({shallow: true}) ? 1 : 0
         }
       },
-    })
+    }),
+    [step.order]
   );
 
   const [{ opacityBelow }, dropBelowRef] = useDrop(
     () => ({
       accept: 'STEP',
-      drop: () => {},
+      drop: drop('below'),
       hover: dragHover('below'),
       // canDrop: () => {},
       collect: (monitor) => ({
         opacityBelow: monitor.isOver({shallow: true}) ? 1 : 0
       }),
-    })
+    }),
+    [step.order]
   );
 
   const fetcher = useFetcher();
@@ -119,6 +143,22 @@ export function Step({step}: {step: StepWithChildren}) {
     const projectId = step.projectId as string;
     const stepId = step.id;
     fetcher.submit({_action, projectId, stepId}, {method: 'put', action: `/projects/${projectId}`});
+  }
+
+  function move(stepId: string, newParentStepId: string, newOrder: number) {
+    const _action = 'move-step';
+    const projectId = step.projectId as string;
+
+    fetcher.submit({
+      _action,
+      projectId,
+      stepId,
+      newParentStepId,
+      newOrder: `${newOrder}`
+    }, {
+      method: 'put', 
+      action: `/projects/${projectId}`
+    });
   }
 
   function toggleStepDetails() {
@@ -155,7 +195,7 @@ export function Step({step}: {step: StepWithChildren}) {
           <Circle></Circle>
          }
         </Indicator>
-        <Name>{step.name}</Name>
+        <Name>{step.name} ({step.order})</Name>
         <More onClick={openMoreMenu}>
           <Dots className="icon" />
         </More>
@@ -164,7 +204,7 @@ export function Step({step}: {step: StepWithChildren}) {
         <WhenOpenedWrapper>
           <Children>
             {step.children ? step.children.map((child) => (
-              <Step step={child}></Step>
+              <Step step={child} key={child.id}></Step>
               )) : undefined}
           </Children>
           <StepCreator projectId={step.projectId!} parentStepId={step.id}></StepCreator>
