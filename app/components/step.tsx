@@ -1,5 +1,5 @@
 import { Step  as StepModel } from '@prisma/client';
-import { Circle, CircleCheck, Dots, Copy, Trash, DragDrop2 } from 'tabler-icons-react';
+import { Circle, CircleCheck, CircleMinus, Dots, Copy, Trash, DragDrop2 } from 'tabler-icons-react';
 import { useFetcher } from 'remix';
 import styled from 'styled-components';
 import React, { useState, MouseEvent, TouchEvent, useEffect, useRef } from 'react';
@@ -104,7 +104,6 @@ export function Step({step}: {step: StepWithChildren}) {
         if (step.parentStepId === i.step.parentStepId && i.step.order === newOrder) {
           // if the drop happens in a place where it does not
           // implies a move, return silently
-          console.log('same order');
           return;
         }
 
@@ -197,9 +196,19 @@ export function Step({step}: {step: StepWithChildren}) {
       <Main tabIndex={0} onClick={toggleStepDetails}>
         <Indicator onClick={toggleProgress}>
          {step.progress === 1 ?
-          <CircleCheck className="icon" />
+          <CircleCheck />
           :
-          <Circle></Circle>
+          undefined
+         }
+         {step.progress === 0 ?
+          <Circle />
+          :
+          undefined
+         }
+         {step.progress !== 0 && step.progress !== 1 ?
+          <CircleMinus />
+          :
+          undefined
          }
         </Indicator>
         <Name>

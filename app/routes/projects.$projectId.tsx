@@ -35,9 +35,6 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
   }
 
   const steps = await StepUtil.getProjectsSteps({project, user, computeChildren: true});
-
-  console.log('steps', steps);
-
   const data = {
     project,
     user,

@@ -102,7 +102,7 @@ export class StepUtil {
 
     // TODO: here we must do something to compute the progress of children and parents of this step
     const updatedStep = await db.step.update({where: {id: stepId}, data: {progress: newProgress}});  
-
+    await StepUtil.updateProjectTree(updatedStep);
     return updatedStep;
   }
 
@@ -190,6 +190,11 @@ export class StepUtil {
 
       const decrementOriginalFrom = step.order;
       const incrementNewFrom = newOrder;
+      const parentId = step.parentStepId || step.projectId;
+      const originalParent = await db.step.findUnique({where: {id: parentId}});
+      if (!originalParent) {
+        throw new Error('Original parent not found');
+      }
 
       await db.step.updateMany({
         where: {
@@ -212,8 +217,57 @@ export class StepUtil {
       });
 
       const updatedStep = await db.step.update({where: {id: step.id}, data: {parentStepId: newParentStepId, order: newOrder}});
+      await StepUtil.updateProjectTree(updatedStep);
+      const originalParentChildren = await db.step.findMany({where: {parentStepId: originalParent.id}});
+      if (originalParentChildren.length) {
+        await StepUtil.updateProjectTree(originalParentChildren[0]);
+      } else {
+        if (originalParent.progress !== 0 && originalParent.progress !== 1) {
+          originalParent.progress = 0;
+          await db.step.update({where: {id: originalParent.id}, data: {progress: originalParent.progress}});
+          await StepUtil.updateProjectTree(originalParent);
+        }
+      }
       return updatedStep;
     }
+  }
+
+  private static async updateProjectTree(relatedToStep: Step): Promise<void> {
+    // updating progress down
+    const referenceStep = await db.step.findUnique({where: {id: relatedToStep.id}});
+    if (!referenceStep) {
+      throw new Error('Related step not found');
+    }
+    if (referenceStep.progress === 0 || referenceStep.progress === 1) {
+      await StepUtil.updateProgressDown(referenceStep.id, referenceStep.progress);
+    }
+    await StepUtil.updateProgressUp(relatedToStep);
+  }
+
+  private static async updateProgressDown(parentStepId: string, progress: 0 | 1): Promise<void> {
+    const result = await db.step.updateMany({where: {parentStepId}, data: {progress}});
+    if (result.count) {
+      const steps = await db.step.findMany({where: {parentStepId}});
+      for (const step of steps) {
+        await StepUtil.updateProgressDown(step.id, progress);
+      }
+    }
+  }
+
+  private static async updateProgressUp(step: Step): Promise<void> {
+    const parentStepId = step.parentStepId || step.projectId;
+    if (!parentStepId) {
+      return;
+    }
+    const parentStep = await db.step.findUnique({where: {id: parentStepId}});
+    if (!parentStep) {
+      throw new Error('Parent step not found');
+    }
+    const children = await db.step.findMany({where: {parentStepId: parentStep.id}});
+    const progress = children.reduce((prev, curr) => prev + curr.progress, 0) / children.length;
+    parentStep.progress = progress;
+    await db.step.update({where: {id: parentStep.id}, data: {progress}});
+    await StepUtil.updateProgressUp(parentStep);
   }
 
   // TODO: add selectors to avoid fetching all data
