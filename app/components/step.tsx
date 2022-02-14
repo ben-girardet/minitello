@@ -84,25 +84,32 @@ export function Step({step}: {step: StepWithChildren}) {
       i._dragHoverClientX = undefined;
       i._dragHoverClientY = undefined;
 
-      let newOrder = -1;
-      const isSameParent = step.parentStepId === i.step.parentStepId;
-      if (position === 'above') {
-        newOrder = !isSameParent || i.step.order >= step.order ? step.order : step.order - 1;
+      const hasChildren = !!step.children?.length;
+      const localIsDraggingRight = (monitor.getDifferenceFromInitialOffset()?.x || 0) > 40 && !hasChildren && position === 'below';
+
+      if (localIsDraggingRight) {
+        move(i.step.id, step.id, 0);
       } else {
-        newOrder = !isSameParent || i.step.order > step.order ? step.order + 1 : step.order;
-      }
+        let newOrder = -1;
+        const isSameParent = step.parentStepId === i.step.parentStepId;
+        if (position === 'above') {
+          newOrder = !isSameParent || i.step.order >= step.order ? step.order : step.order - 1;
+        } else {
+          newOrder = !isSameParent || i.step.order > step.order ? step.order + 1 : step.order;
+        }
 
-      if (!step.parentStepId) {
-        throw new Error('Missing parentStepId');
-      }
-      if (step.parentStepId === i.step.parentStepId && i.step.order === newOrder) {
-        // if the drop happens in a place where it does not
-        // implies a move, return silently
-        console.log('same order');
-        return;
-      }
+        if (!step.parentStepId) {
+          throw new Error('Missing parentStepId');
+        }
+        if (step.parentStepId === i.step.parentStepId && i.step.order === newOrder) {
+          // if the drop happens in a place where it does not
+          // implies a move, return silently
+          console.log('same order');
+          return;
+        }
 
-      move(i.step.id, step.parentStepId, newOrder);
+        move(i.step.id, step.parentStepId, newOrder);
+      }
     };
   };
 
@@ -195,7 +202,12 @@ export function Step({step}: {step: StepWithChildren}) {
           <Circle></Circle>
          }
         </Indicator>
-        <Name>{step.name} ({step.order})</Name>
+        <Name>
+          {step.name}
+          {step.children?.length ? (
+            <NbChildren>{step.children?.length}</NbChildren>
+          ) : undefined}
+        </Name>
         <More onClick={openMoreMenu}>
           <Dots className="icon" />
         </More>
@@ -271,6 +283,14 @@ const Indicator = styled.button`
 const Name = styled.div`
   width: 100%;
 `;
+const NbChildren = styled.span`
+  font-size: 0.8rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 1.5rem;
+  background-color: var(--primary-very-light);
+  margin-left: 8px;
+  color: var(--primary-very-light-contrast);
+`
 const More = styled.button`
   display: flex;
   align-items: center;
