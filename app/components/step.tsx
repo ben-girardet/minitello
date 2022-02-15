@@ -193,7 +193,7 @@ export function Step({step}: {step: StepWithChildren}) {
   return (
     <Wrapper ref={dragRef} style={{ opacity }}>
       <BoxRef ref={containerRef}></BoxRef>
-      <Main tabIndex={0} onClick={toggleStepDetails}>
+      <Main onClick={toggleStepDetails}>
         <Indicator onClick={toggleProgress}>
          {step.progress === 1 ?
           <CircleCheck />
@@ -253,7 +253,7 @@ export function Step({step}: {step: StepWithChildren}) {
 
 const Wrapper = styled.div`
   position: relative;
-  padding: 8px;
+  padding: 0 8px;
   gap: 8px;
   background: hsl(0, 0%, 100%);
   margin: 1px 0;
@@ -271,13 +271,11 @@ const BoxRef = styled.div`
   pointer-events: none;
 `;
 const Main = styled.div`
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   cursor: pointer;
-  outline-offset: 4px;
 `;
 const Indicator = styled.button`
   display: flex;
@@ -289,8 +287,22 @@ const Indicator = styled.button`
   border: none;
   cursor: pointer;
 `;
-const Name = styled.div`
+const Name = styled.button`
+
+  background-color: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+
   width: 100%;
+  min-height: 50px;
+  padding: 8px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  margin-left: -8px;
+  margin-right: -8px;
 `;
 const NbChildren = styled.span`
   font-size: 0.8rem;
