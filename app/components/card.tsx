@@ -7,9 +7,10 @@ const Card: FunctionComponent = ({children}) => {
 
 const Wrapper = styled.div`
   background: var(--card-layer-background);
-  foreground: var(--card-layer-foreground);
+  color: var(--card-layer-foreground);
   box-shadow: var(--elevation-shadow);
   padding: var(--gutter);
+  border-radius: 2px;
 `;
 
 export default Card;

@@ -24,7 +24,7 @@ export const loader = async ({request}: DataFunctionArgs) => {
     },
     take: 5,
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, members: true }
+    select: { id: true, name: true, description: true, members: true }
   });
   
   const data = {
@@ -36,30 +36,50 @@ export const loader = async ({request}: DataFunctionArgs) => {
 
 export default function Index() {
 
-  const {projects} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
+  const {projects, user} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
 
   return (
-    <Wrapper>
-      <Stack size="very-large">
-        <Stack size="large">
-          {projects.map(project => (
-            <Card key={project.id}>
-              <Project>
-                <h2>{project.name}</h2>
-                <Link to={project.id}>
-                  <Button variant="ghost" size="medium">Open</Button>
-                </Link>
-              </Project>
-            </Card>
-          ))}
-        </Stack>
+    <>
+      <TopBar>
+        {user.username}
         <Form action="/logout" method="post">
           <Button type="submit" variant="fill" size="small">Logout</Button>
         </Form>
-      </Stack>
-    </Wrapper>
+      </TopBar>
+      <Wrapper>
+        <Stack size="very-large">
+          <Link to="new">
+            <Button variant="outline" size="small">Create new project</Button>
+          </Link>
+          <Stack size="large">
+            {projects.map(project => (
+              <Card key={project.id}>
+                <Project>
+                  <div>
+                    <h2>{project.name}</h2>
+                    <p>{project.description || ''}</p>
+                  </div>
+                  <Link to={project.id}>
+                    <Button variant="ghost" size="medium">Open</Button>
+                  </Link>
+                </Project>
+              </Card>
+            ))}
+          </Stack>
+        </Stack>
+      </Wrapper>
+    </>
   );
 }
+
+const TopBar = styled.nav`
+  display: flex;
+  padding: 8px;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--primary);
+  color: var(--primary-contrast);
+`;
 
 const Wrapper = styled.div`
   width: var(--large-container-width);
@@ -70,4 +90,7 @@ const Wrapper = styled.div`
 `;
 
 const Project = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;

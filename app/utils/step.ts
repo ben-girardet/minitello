@@ -74,6 +74,46 @@ export class StepUtil {
     return newStep;
   }
 
+  public static async createProjectFromForm({form, userId}: {form: FormData, userId: string}): Promise<Step> {
+    const name = form.get("name");
+    const description = form.get("description") || '';
+    
+    const result: FormResult = {_global: {}};
+    if (
+      !isString(name) ||
+      !isString(description)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+
+    result.name = { value: name, error: StepUtil.validateName(name) };
+
+    if (Object.values(result).map(r => r.error).some(Boolean)) {
+      throw result;
+    }
+
+    const project = await db.step.create({
+      data: {
+        name,
+        description,
+        order: 0,
+        createdById: userId,
+        members: {
+          create: {
+            user: {
+              connect: {
+                id: userId
+              }
+            },
+            role: 'MANAGER'
+          }
+        }
+      }
+    });
+  
+    return project;
+  }
+
   public static async toggleProgress({form, userId}: {form: FormData, userId: string}): Promise<Step> {
     const projectId = form.get("projectId");
     const stepId = form.get("stepId");
