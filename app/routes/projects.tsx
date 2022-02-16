@@ -1,11 +1,20 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { Form, Link, redirect, useLoaderData } from "remix";
+import { Form, Link, redirect, useLoaderData, MetaFunction } from "remix";
 import styled from "styled-components";
 import Button from "~/components/button";
 import Card from "~/components/card";
+import ProgressIndicator from "~/components/progress-indicator";
 import Stack from "~/components/stack";
 import { db } from "~/utils/db.server";
 import { getUser } from "~/utils/session.server";
+
+export const meta: MetaFunction = () => {
+  return {
+    title: "Minitello - Projects",
+    description:
+      "Handle your projects with ease"
+  };
+};
 
 export const loader = async ({request}: DataFunctionArgs) => {
   const user = await getUser(request);
@@ -23,8 +32,8 @@ export const loader = async ({request}: DataFunctionArgs) => {
       }
     },
     take: 5,
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, description: true, members: true }
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, name: true, description: true, progress: true, members: true }
   });
   
   const data = {
@@ -54,15 +63,15 @@ export default function Index() {
           <Stack size="large">
             {projects.map(project => (
               <Card key={project.id}>
-                <Project>
-                  <div>
-                    <h2>{project.name}</h2>
-                    <p>{project.description || ''}</p>
-                  </div>
-                  <Link to={project.id}>
-                    <Button variant="ghost" size="medium">Open</Button>
-                  </Link>
-                </Project>
+                <Link to={project.id} style={{textDecoration: 'none'}}>
+                  <Project>
+                    <Indicator progress={project.progress} size={3}></Indicator>
+                    <Label>
+                      <Name>{project.name}</Name>
+                      <Description>{project.description}</Description>
+                    </Label>
+                  </Project>
+                </Link>
               </Card>
             ))}
           </Stack>
@@ -93,4 +102,22 @@ const Project = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 `;
+
+const Indicator = styled(ProgressIndicator)`
+  flex: 0 0 3rem;
+`;
+const Label = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--foreground);
+`;
+const Name = styled.div`
+  font-weight: bold;
+`;
+const Description = styled.div`
+  font-size: 0.8rem;
+`; 

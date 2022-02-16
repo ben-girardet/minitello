@@ -1,6 +1,6 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
 import { useEffect } from "react";
-import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, useTransition } from "remix";
+import { Link, redirect, useLoaderData, ActionFunction, MetaFunction, json, useActionData, useTransition } from "remix";
 import styled from "styled-components";
 import { ChevronLeft } from "tabler-icons-react";
 import Button from "~/components/button";
@@ -11,6 +11,13 @@ import { db } from "~/utils/db.server";
 import { FormResult, getFormDataAsString, isString, FormResultGlobalError } from "~/utils/form";
 import { getUser, requireUserId } from "~/utils/session.server";
 import { StepUtil } from "~/utils/step";
+
+export const meta: MetaFunction = ({data}: {data: Awaited<ReturnType<typeof loader>>}) => {
+  return {
+    title: `Minitello - ${data.project.name}`,
+    description: data.project.description || ''
+  };
+};
 
 export const loader = async ({request, params}: DataFunctionArgs) => {
   const user = await getUser(request);
@@ -27,7 +34,7 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
     where: {
       id: projectId,
     },
-    select: { id: true, name: true, members: true }
+    select: { id: true, name: true, description: true, members: true }
   });
 
   if (!project) {
@@ -38,7 +45,7 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
   const data = {
     project,
     user,
-    steps: steps.filter(s => !s.parentStepId || s.parentStepId === projectId),
+    steps: steps //.filter(s => !s.parentStepId || s.parentStepId === projectId),
   };
   return data;
 }

@@ -71,6 +71,8 @@ export class StepUtil {
       }
     });
 
+    await StepUtil.updateProjectTree(newStep);
+
     return newStep;
   }
 
@@ -140,7 +142,6 @@ export class StepUtil {
 
     const newProgress = step.progress === 1 ? 0 : 1;
 
-    // TODO: here we must do something to compute the progress of children and parents of this step
     const updatedStep = await db.step.update({where: {id: stepId}, data: {progress: newProgress}});  
     await StepUtil.updateProjectTree(updatedStep);
     return updatedStep;

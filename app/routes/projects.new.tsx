@@ -1,16 +1,20 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, useTransition, Form } from "remix";
+import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, MetaFunction, Form } from "remix";
 import styled from "styled-components";
 import Button from "~/components/button";
-import Card from "~/components/card";
 import FormError from "~/components/form-error";
 import FormLabel from "~/components/form-label";
 import Stack from "~/components/stack";
 import TextField from "~/components/text-field";
-import { db } from "~/utils/db.server";
 import { FormResult, FormResultGlobalError, getFormDataAsString } from "~/utils/form";
 import { getUser, requireUserId } from "~/utils/session.server";
 import { StepUtil } from "~/utils/step";
+
+export const meta: MetaFunction = () => {
+  return {
+    title: "Minitello - Create a project"
+  };
+};
 
 export const loader = async ({request}: DataFunctionArgs) => {
   const user = await getUser(request);
