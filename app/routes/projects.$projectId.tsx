@@ -45,7 +45,7 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
   const data = {
     project,
     user,
-    steps: steps //.filter(s => !s.parentStepId || s.parentStepId === projectId),
+    steps: steps.filter(s => !s.parentStepId || s.parentStepId === projectId),
   };
   return data;
 }
