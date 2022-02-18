@@ -3,6 +3,8 @@ import { css } from 'styled-components';
 export default css`
 :root {
 
+  --reach-dialog: 1;
+  
   --primary-hue: 165deg;
   --error-hue: 0deg;
   --intense: 87% 36%;

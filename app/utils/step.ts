@@ -140,6 +140,27 @@ export class StepUtil {
     return updatedProject;
   }
 
+  public static async deleteProjectFromForm({form, userId}: {form: FormData, userId: string}): Promise<void> {
+    const projectId = form.get("projectId");
+    
+    const result: FormResult = {_global: {}};
+    if (
+      !isString(projectId)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+
+    if (Object.values(result).map(r => r.error).some(Boolean)) {
+      throw result;
+    }
+
+    console.log('ready to delete project', projectId);
+
+    await db.userProjects.deleteMany({where: {projectId}});
+    await db.step.delete({where: {id: projectId}});
+    await db.step.deleteMany({where: {projectId}});
+  }
+
   public static async toggleProgress({form, userId}: {form: FormData, userId: string}): Promise<Step> {
     const projectId = form.get("projectId");
     const stepId = form.get("stepId");
