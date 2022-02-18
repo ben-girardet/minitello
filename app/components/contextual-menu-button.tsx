@@ -1,8 +1,8 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, ComponentPropsWithoutRef } from "react";
 import styled from 'styled-components';
 
-const ContextualMenuButton: FunctionComponent = ({children}) => {
-  return <Wrapper>{children}</Wrapper>
+const ContextualMenuButton: FunctionComponent<ComponentPropsWithoutRef<'button'>> = ({children, ...delegated}) => {
+  return <Wrapper {...delegated}>{children}</Wrapper>
 }
 
 const Wrapper = styled.button`

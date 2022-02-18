@@ -1,4 +1,4 @@
-import { FunctionComponent, KeyboardEvent } from 'react';
+import { FunctionComponent, KeyboardEvent, MouseEvent } from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import VisuallyHidden from './visually-hidden';
@@ -14,7 +14,11 @@ type ContextualMenuProps = {
 
 const ContextualMenu: FunctionComponent<ContextualMenuProps> = ({hidden, onHide, anchor, pointerPosition, title, children}) => {
 
-  function hide() {
+  function hide(event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     onHide();
   };
 
@@ -82,7 +86,7 @@ const ContextualMenu: FunctionComponent<ContextualMenuProps> = ({hidden, onHide,
         >
       
         <VisuallyHidden id="contextual-menu-title">{title || 'Menu'}</VisuallyHidden>
-        <ButtonsList>
+        <ButtonsList onClick={hide}>
           {children}
         </ButtonsList>
       </Wrapper>

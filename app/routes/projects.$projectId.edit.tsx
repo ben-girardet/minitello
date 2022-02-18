@@ -1,29 +1,47 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, MetaFunction, Form } from "remix";
+import { Link, redirect, useLoaderData, ActionFunction, json, useActionData, MetaFunction, Form, useTransition } from "remix";
 import styled from "styled-components";
 import Button from "~/components/button";
 import FormError from "~/components/form-error";
 import FormLabel from "~/components/form-label";
 import Stack from "~/components/stack";
 import TextField from "~/components/text-field";
-import { FormResult, FormResultGlobalError, getFormDataAsString } from "~/utils/form";
+import { FormResult, FormResultGlobalError, getFormDataAsString, isString } from "~/utils/form";
 import { getUser, requireUserId } from "~/utils/session.server";
+import { db } from "~/utils/db.server";
 import { StepUtil } from "~/utils/step";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({data}) => {
   return {
-    title: "Minitello - Create a project"
+    title: `Minitello - Edit Project - ${data.project.name}`
   };
 };
 
-export const loader = async ({request}: DataFunctionArgs) => {
+export const loader = async ({request, params}: DataFunctionArgs) => {
   const user = await getUser(request);
   if (!user) {
     throw redirect(`/login`);
   }
-  
+
+  const projectId = params.projectId;
+  if (!isString(projectId)) {
+    throw new Error('Invalid projectId');
+  }
+
+  const project = await db.step.findUnique({
+    where: {
+      id: projectId,
+    },
+    select: { id: true, name: true, description: true, members: true }
+  });
+
+  if (!project) {
+    throw new Error('Project not found');
+  }
+
   const data = {
-    user
+    project,
+    user,
   };
   return data;
 }
@@ -36,9 +54,9 @@ export const action: ActionFunction = async ({
   const action = getFormDataAsString(form, '_action');
   try {
     if (action === 'create-project') {
-      const newProject = await StepUtil.createProjectFromForm({form, userId});
+      const newProject = await StepUtil.editProjectFromForm({form, userId});
       if (!newProject) {
-        throw FormResultGlobalError(`Failed to create the project`);
+        throw FormResultGlobalError(`Failed to edit the project`);
       }
       return redirect(`/projects/${newProject.id}`)
     } else {
@@ -51,8 +69,9 @@ export const action: ActionFunction = async ({
 
 export default function Index() {
 
-  const {user} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
+  const {user, project} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
   const actionData = useActionData<FormResult>();
+  const transition = useTransition();
 
   return (
     <>
@@ -72,19 +91,20 @@ export default function Index() {
           }
         >
           <input type="hidden" name="_action" value="create-project"></input>
+          <input type="hidden" name="projectId" value={project.id}></input>
           <Stack size="medium">
             <Stack size="small">
               <FormLabel htmlFor="name">Project Name</FormLabel>
-              <TextField formResult={actionData?.name} name="name" id="name"></TextField>
+              <TextField formResult={actionData?.name} value={project.name} name="name" id="name"></TextField>
               <FormError formResult={actionData?.name} name="name"></FormError>
             </Stack>
             <Stack size="small">
               <FormLabel htmlFor="description">Description</FormLabel>
-              <TextField formResult={actionData?.description} name="description" id="description"></TextField>
+              <TextField formResult={actionData?.description} value={project.description || ''} name="description" id="description"></TextField>
               <FormError formResult={actionData?.description} name="description"></FormError>
             </Stack>
             <FormError formResult={actionData?._global} name="_global"></FormError>
-            <Button variant="fill" size="small" type="submit" name="loginType">Create</Button>
+            <Button variant="fill" size="small" type="submit" name="loginType">Edit</Button>
             <Link to="../">
               <Button variant="ghost" size="small" type="button">Cancel</Button>
             </Link>

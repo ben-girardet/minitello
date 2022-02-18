@@ -1,12 +1,14 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { Form, Link, redirect, useLoaderData, MetaFunction } from "remix";
+import { Form, Link, redirect, useLoaderData, MetaFunction, ActionFunction, json, useFetcher, useNavigate, useHref } from "remix";
 import styled from "styled-components";
 import Button from "~/components/button";
 import Card from "~/components/card";
-import ProgressIndicator from "~/components/progress-indicator";
+import { ProjectPreview } from "~/components/project-preview";
 import Stack from "~/components/stack";
 import { db } from "~/utils/db.server";
-import { getUser } from "~/utils/session.server";
+import { getUser, requireUserId } from "~/utils/session.server";
+import { FormResult, FormResultGlobalError, getFormDataAsString } from "~/utils/form";
+import { StepUtil } from "~/utils/step";
 
 export const meta: MetaFunction = () => {
   return {
@@ -43,9 +45,52 @@ export const loader = async ({request}: DataFunctionArgs) => {
   return data;
 }
 
+export const action: ActionFunction = async ({
+  request
+}) => {
+  const userId = await requireUserId(request);
+  const form = await request.formData();
+  const action = getFormDataAsString(form, '_action');
+  try {
+    if (action === 'edit-project') {
+      const newProject = await StepUtil.createProjectFromForm({form, userId});
+      if (!newProject) {
+        throw FormResultGlobalError(`Failed to create the step`);
+      }
+      return redirect(`/projects/${newProject.id}`)
+    } if (action === 'delete-project') {
+      const newProject = await StepUtil.createProjectFromForm({form, userId});
+      if (!newProject) {
+        throw FormResultGlobalError(`Failed to create the step`);
+      }
+      return redirect(`/projects/${newProject.id}`)
+    }  if (action === 'duplicate-project') {
+      const newProject = await StepUtil.createProjectFromForm({form, userId});
+      if (!newProject) {
+        throw FormResultGlobalError(`Failed to create the step`);
+      }
+      return redirect(`/projects/${newProject.id}`)
+    } else {
+      throw FormResultGlobalError(`Invalid action`);
+    }
+  } catch (error) {
+    return json(error as FormResult, {status: 400});
+  }
+};
+
 export default function Index() {
 
   const {projects, user} = useLoaderData<Awaited<ReturnType<typeof loader>>>();
+  const fetcher = useFetcher();
+  const navigate = useNavigate();
+  
+  const editProject = (projectId: string) => {
+    navigate(`/projects/${projectId}/edit`);
+  };
+
+  const deleteProject = (projectId: string) => {
+    console.log('deleting', projectId);
+  };
 
   return (
     <>
@@ -64,13 +109,7 @@ export default function Index() {
             {projects.map(project => (
               <Card key={project.id}>
                 <Link to={project.id} style={{textDecoration: 'none'}}>
-                  <Project>
-                    <Indicator progress={project.progress} size={3}></Indicator>
-                    <Label>
-                      <Name>{project.name}</Name>
-                      <Description>{project.description}</Description>
-                    </Label>
-                  </Project>
+                  <ProjectPreview project={project} onDelete={() => deleteProject(project.id)} onEdit={() => editProject(project.id)}></ProjectPreview>
                 </Link>
               </Card>
             ))}
@@ -97,27 +136,3 @@ const Wrapper = styled.div`
   margin-right: auto;
   margin-left: auto;
 `;
-
-const Project = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-`;
-
-const Indicator = styled(ProgressIndicator)`
-  flex: 0 0 3rem;
-`;
-const Label = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: var(--foreground);
-`;
-const Name = styled.div`
-  font-weight: bold;
-`;
-const Description = styled.div`
-  font-size: 0.8rem;
-`; 
