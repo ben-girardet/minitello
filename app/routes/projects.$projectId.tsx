@@ -1,5 +1,5 @@
 import { DataFunctionArgs } from "@remix-run/server-runtime";
-import { useEffect } from "react";
+import { useEffect, useState, MouseEvent } from "react";
 import { Link, redirect, useLoaderData, ActionFunction, MetaFunction, json, useActionData, useTransition } from "remix";
 import styled from "styled-components";
 import { ChevronLeft } from "tabler-icons-react";
@@ -11,6 +11,9 @@ import { db } from "~/utils/db.server";
 import { FormResult, getFormDataAsString, isString, FormResultGlobalError } from "~/utils/form";
 import { getUser, requireUserId } from "~/utils/session.server";
 import { StepUtil } from "~/utils/step";
+import StepEditor from '~/components/step-editor';
+import { Step as StepModel } from "@prisma/client";
+import PubSub from 'pubsub-js';
 
 export const meta: MetaFunction = ({data}: {data: Awaited<ReturnType<typeof loader>>}) => {
   return {
@@ -70,6 +73,9 @@ export const action: ActionFunction = async ({
     } else if (action === 'delete-step') {
       await StepUtil.deleteStep({form, userId});
       return json({}, 200);
+    } else if (action === 'delete-step') {
+      await StepUtil.duplicateStep({form, userId});
+      return json({}, 200);
     } else {
       throw FormResultGlobalError(`Invalid action`);
     }
@@ -101,6 +107,34 @@ export default function Index() {
     }
   }, [transition.state]);
 
+  const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
+  const [editingStep, setEditingStep] = useState<StepModel | undefined>(undefined);
+
+  function startEditingStep(msgstep: string, step: StepModel): void {
+    console.log('start editing', msgstep, step);
+    setEditingStep(step);
+    setIsEditorOpen(true);
+  }
+
+  useEffect(() => { 
+    const token = PubSub.subscribe('edit-step', startEditingStep);
+    return function cleanup () {
+      PubSub.unsubscribe(token);
+    }
+  }, []);
+
+  function dismissStepEditor(event: MouseEvent) {
+    event.stopPropagation();
+    setIsEditorOpen(false);
+    setEditingStep(undefined);
+  }
+
+  function saveStepEditor(event: MouseEvent) {
+    event.stopPropagation();
+    setIsEditorOpen(false);
+    setEditingStep(undefined);
+  }
+
   return (
     <Wrapper>
       <Stack size="large">
@@ -124,6 +158,7 @@ export default function Index() {
             ></StepCreator>
         </div>
       </Stack>
+      <StepEditor isOpen={isEditorOpen} onDismiss={dismissStepEditor} onSave={saveStepEditor} step={editingStep!}></StepEditor>
     </Wrapper>
   );
 }

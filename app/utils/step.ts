@@ -317,6 +317,7 @@ export class StepUtil {
       return updatedStep;
     }
   }
+  
   public static async deleteStep({form, userId}: {form: FormData, userId: string}): Promise<void> {
     const projectId = form.get("projectId");
     const stepId = form.get("stepId");
@@ -356,6 +357,26 @@ export class StepUtil {
     }
     parseStepChildren(stepToDelete);
     const result = await db.step.deleteMany({where: {id: {in: stepIdsToDelete}}});
+  }
+  
+  public static async duplicateStep({form, userId}: {form: FormData, userId: string}): Promise<void> {
+    const projectId = form.get("projectId");
+    const stepId = form.get("stepId");
+    
+    if (
+      !isString(projectId) ||
+      !isString(stepId)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+    
+    const project = await db.step.findUnique({where: {id: projectId}});
+    if (!project) {
+      throw FormResultGlobalError('Project not found');
+    }
+    // TODO: ensure the user has the right to write in this project
+
+    throw new Error('Not yet implemented');
   }
 
   private static async updateProjectTree(relatedToStep: Step): Promise<void> {

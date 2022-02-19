@@ -1,12 +1,13 @@
 import { Step  as StepModel } from '@prisma/client';
-import { Circle, CircleCheck, CircleMinus, Dots, Copy, Trash, DragDrop2 } from 'tabler-icons-react';
+import { Circle, CircleCheck, CircleMinus, Dots, Copy, Trash, DragDrop2, Edit } from 'tabler-icons-react';
 import { useFetcher } from 'remix';
 import styled from 'styled-components';
 import React, { useState, MouseEvent, TouchEvent, useEffect, useRef } from 'react';
 import ContextualMenu from './contextual-menu';
 import ContextualMenuButton from './contextual-menu-button';
 import StepCreator from './step-creator';
-import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd'
+import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
+import PubSub from 'pubsub-js';
 
 export interface StepWithChildren extends StepModel {
   children?: StepWithChildren[];
@@ -186,6 +187,25 @@ export function Step({step}: {step: StepWithChildren}) {
     });
   }
 
+  function duplicateStep() {
+    const _action = 'duplicate-step';
+    const projectId = step.projectId as string;
+    const stepId = step.id;
+
+    fetcher.submit({
+      _action,
+      projectId,
+      stepId,
+    }, {
+      method: 'put', 
+      action: `/projects/${projectId}`
+    });
+  }
+
+  function editStep() {
+    PubSub.publish('edit-step', step);
+  }
+
   const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [pointerPosition, setPointerPosition] = useState<{x: number, y: number} | null>(null);
@@ -247,18 +267,18 @@ export function Step({step}: {step: StepWithChildren}) {
         </WhenOpenedWrapper>
       ) : undefined}
       <ContextualMenu hidden={!isMenuOpened} onHide={hideMoreMenu} anchor={menuAnchor} pointerPosition={pointerPosition}>
-        <ContextualMenuButton>
+        <ContextualMenuButton onClick={editStep}>
+          <Edit></Edit>
+          Edit
+        </ContextualMenuButton>
+        <ContextualMenuButton onClick={duplicateStep}>
           <Copy></Copy>
           Duplicate
-          </ContextualMenuButton>
-        <ContextualMenuButton>
-          <DragDrop2></DragDrop2>
-          Move
-          </ContextualMenuButton>
+        </ContextualMenuButton>
         <ContextualMenuButton onClick={deleteStep}>
           <Trash></Trash>
           Delete
-          </ContextualMenuButton>
+        </ContextualMenuButton>
       </ContextualMenu>
       <DropAbove ref={dropAboveRef} style={{opacity: opacityAbove, marginLeft: isDraggingRight ? '40px' : '0px'}}></DropAbove>
       <DropBelow ref={dropBelowRef} style={{opacity: opacityBelow, marginLeft: isDraggingRight ? '40px' : '0px'}}></DropBelow>
