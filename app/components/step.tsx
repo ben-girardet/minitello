@@ -171,6 +171,21 @@ export function Step({step}: {step: StepWithChildren}) {
     setOpened(!opened);
   }
 
+  function deleteStep() {
+    const _action = 'delete-step';
+    const projectId = step.projectId as string;
+    const stepId = step.id;
+
+    fetcher.submit({
+      _action,
+      projectId,
+      stepId,
+    }, {
+      method: 'put', 
+      action: `/projects/${projectId}`
+    });
+  }
+
   const [isMenuOpened, setIsMenuOpened] = useState<boolean>(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [pointerPosition, setPointerPosition] = useState<{x: number, y: number} | null>(null);
@@ -240,7 +255,7 @@ export function Step({step}: {step: StepWithChildren}) {
           <DragDrop2></DragDrop2>
           Move
           </ContextualMenuButton>
-        <ContextualMenuButton>
+        <ContextualMenuButton onClick={deleteStep}>
           <Trash></Trash>
           Delete
           </ContextualMenuButton>
@@ -290,6 +305,7 @@ const Indicator = styled.button`
 const Name = styled.button`
 
   background-color: transparent;
+  color: var(--foreground);
   border: 0;
   text-align: left;
   cursor: pointer;
@@ -317,6 +333,7 @@ const More = styled.button`
   align-items: center;
   margin-left: auto;
   background: transparent;
+  color: var(--foreground);
   border: none;
   cursor: pointer;
 `;

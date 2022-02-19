@@ -41,7 +41,7 @@ export const loader = async ({request, params}: DataFunctionArgs) => {
     throw new Error('Project not found');
   }
 
-  const steps = await StepUtil.getProjectsSteps({project, user, computeChildren: true});
+  const steps = await StepUtil.getProjectsSteps({project, userId: user.id, computeChildren: true});
   const data = {
     project,
     user,
@@ -67,6 +67,9 @@ export const action: ActionFunction = async ({
       return await StepUtil.toggleProgress({form, userId});
     } else if (action === 'move-step') {
       return await StepUtil.moveStep({form, userId});
+    } else if (action === 'delete-step') {
+      await StepUtil.deleteStep({form, userId});
+      return json({}, 200);
     } else {
       throw FormResultGlobalError(`Invalid action`);
     }

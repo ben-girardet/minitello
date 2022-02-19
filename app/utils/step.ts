@@ -317,6 +317,46 @@ export class StepUtil {
       return updatedStep;
     }
   }
+  public static async deleteStep({form, userId}: {form: FormData, userId: string}): Promise<void> {
+    const projectId = form.get("projectId");
+    const stepId = form.get("stepId");
+    
+    if (
+      !isString(projectId) ||
+      !isString(stepId)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+    
+    const project = await db.step.findUnique({where: {id: projectId}});
+    if (!project) {
+      throw FormResultGlobalError('Project not found');
+    }
+    // TODO: ensure the user has the right to write in this project
+
+    // get all project steps
+    const steps = await StepUtil.getProjectsSteps({project, userId, select: {id: true}, computeChildren: true});
+
+    // find the step to delete
+    const stepToDelete = steps.find(s => s.id === stepId);
+
+    if (!stepToDelete) {
+      throw new Error('Step to delete not found');
+    }
+
+    console.log('stepToDelete', stepToDelete);
+
+    // parse step and its children to compute a list of ids to delete
+    const stepIdsToDelete: string[] = [stepToDelete.id];
+    function parseStepChildren(step: StepWithChildren) {
+      for (const child of step.children || []) {
+        stepIdsToDelete.push(child.id);
+        parseStepChildren(child);
+      }
+    }
+    parseStepChildren(stepToDelete);
+    const result = await db.step.deleteMany({where: {id: {in: stepIdsToDelete}}});
+  }
 
   private static async updateProjectTree(relatedToStep: Step): Promise<void> {
     // updating progress down
@@ -359,13 +399,13 @@ export class StepUtil {
   // TODO: add selectors to avoid fetching all data
   public static async getProjectsSteps({
     project,
-    user,
+    userId,
     select,
     computeChildren,
     computeParent,
   }: {
     project: {id: string},
-    user: User,
+    userId: string,
     // the any here comes because I cannot import the `StepSelect` type
     // from @prisma/client
     select?: any,
@@ -374,7 +414,7 @@ export class StepUtil {
   }): Promise<StepWithChildren[]> {
   
     const userProject = await db.userProjects.findFirst({where: {
-      userId: user.id,
+      userId: userId,
       projectId: project.id
     }});
 

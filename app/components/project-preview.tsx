@@ -133,6 +133,7 @@ const More = styled.button`
   align-items: center;
   margin-left: auto;
   background: transparent;
+  color: var(--foreground);
   border: none;
   cursor: pointer;
 `;
