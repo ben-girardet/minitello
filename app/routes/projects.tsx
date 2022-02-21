@@ -11,6 +11,7 @@ import { FormResult, FormResultGlobalError, getFormDataAsString } from "~/utils/
 import { StepUtil } from "~/utils/step";
 import { useState, MouseEvent } from "react";
 import ConfirmDialog from "~/components/confirm";
+import { openConfirmDialog } from "~/components/confirm";
 
 export const meta: MetaFunction = () => {
   return {
@@ -77,24 +78,24 @@ export default function Index() {
     navigate(`/projects/${projectId}/edit`);
   };
 
-  const [isConfirmDeleteOpened, setIsConfirmDeleteOpened] = useState<boolean>(false);
   const [deletingProject, setDeletingProject] = useState<{name: string, id: string} | null>(null);
   const deleteProject = (project: {name: string, id: string}) => {
-    console.log('deleting', project);
-    openConfirmDeleteDialog(project);
-  };
-  
-  function openConfirmDeleteDialog(project: {name: string, id: string}) {
     setDeletingProject(project);
-    setIsConfirmDeleteOpened(true);
-  }
+    openConfirmDialog(
+      `Deleting ${deletingProject?.name} project ?`,
+      () => {
+        // onDismiss => do nothing
+      },
+      () => {
+        // onConfirm
+        confirmDeleteProject();
+      },
+      'This action is irreversible'
+    );
+    console.log('deleting', project);
+  };
 
-  function hideConfirmDeleteDialog() {
-    setIsConfirmDeleteOpened(false);
-  }
-
-  function confirmDeleteProject(event: MouseEvent) {
-    event.stopPropagation();
+  function confirmDeleteProject() {
     if (!deletingProject) {
       return;
     }
@@ -102,7 +103,6 @@ export default function Index() {
     const projectId = deletingProject.id as string;
     fetcher.submit({_action, projectId}, {method: 'put', action: `/projects`});
     setDeletingProject(null);
-    hideConfirmDeleteDialog();
   }
 
   return (
@@ -128,14 +128,14 @@ export default function Index() {
             ))}
           </Stack>
         </Stack>
-        <ConfirmDialog
+        {/* <ConfirmDialog
           isOpen={isConfirmDeleteOpened}
           title={`Deleting ${deletingProject?.name} project ?`}
           onDismiss={hideConfirmDeleteDialog}
           onConfirm={confirmDeleteProject}
           >
             This action is not reversible
-          </ConfirmDialog>
+          </ConfirmDialog> */}
       </Wrapper>
     </>
   );

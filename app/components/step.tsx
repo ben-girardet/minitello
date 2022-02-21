@@ -8,6 +8,7 @@ import ContextualMenuButton from './contextual-menu-button';
 import StepCreator from './step-creator';
 import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
 import PubSub from 'pubsub-js';
+import { openConfirmDialog } from './confirm';
 
 export interface StepWithChildren extends StepModel {
   children?: StepWithChildren[];
@@ -173,18 +174,28 @@ export function Step({step}: {step: StepWithChildren}) {
   }
 
   function deleteStep() {
-    const _action = 'delete-step';
-    const projectId = step.projectId as string;
-    const stepId = step.id;
 
-    fetcher.submit({
-      _action,
-      projectId,
-      stepId,
-    }, {
-      method: 'put', 
-      action: `/projects/${projectId}`
-    });
+    openConfirmDialog(
+      `Deleting ${step?.name} step and all its children ?`,
+      () => {
+        // onDismiss => do nothing
+      }, () => {
+        // onConfirm => delete step
+        const _action = 'delete-step';
+        const projectId = step.projectId as string;
+        const stepId = step.id;
+    
+        fetcher.submit({
+          _action,
+          projectId,
+          stepId,
+        }, {
+          method: 'put', 
+          action: `/projects/${projectId}`
+        });
+      },
+      'This action is irreversible'
+    );
   }
 
   function duplicateStep() {
