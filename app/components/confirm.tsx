@@ -1,34 +1,41 @@
-import { FunctionComponent, KeyboardEvent, MouseEvent } from 'react';
-import * as ReactDOM from 'react-dom';
+import { FunctionComponent, KeyboardEvent, MouseEvent, ReactNode, useState } from 'react';
+import { render } from 'react-dom';
 import styled from 'styled-components';
 import VisuallyHidden from './visually-hidden';
 import FocusTrap from 'focus-trap-react'
 import { DialogOverlay, DialogContent } from '@reach/dialog';
 import Button from './button';
+import { string } from 'prop-types';
+
+type Handler = (event: MouseEvent) => void;
 
 type ConfirmDialogProps = {
   isOpen: boolean;
   title?: string;
-  onDismiss(event: MouseEvent): void;
-  onConfirm(event: MouseEvent): void;
+  onDismiss: Handler;
+  onConfirm: Handler;
 }
 
-const ConfirmDialog: FunctionComponent<ConfirmDialogProps> = ({isOpen, title, onDismiss, onConfirm, children}) => {
+export const ConfirmDialog: FunctionComponent<ConfirmDialogProps> = ({isOpen, title, onDismiss, onConfirm, children}) => {
+
+  const [_isOpen, setIsOpen] = useState<boolean>(isOpen);
 
   function dismiss(event: MouseEvent) {
     event.stopPropagation();
     event.preventDefault();
+    setIsOpen(false);
     onDismiss(event);
   };
 
   function confirm(event: MouseEvent) {
     event.stopPropagation();
     event.preventDefault();
+    setIsOpen(false);
     onConfirm(event);
   }
 
   return (
-    <Overlay isOpen={isOpen} onDismiss={dismiss}>
+    <Overlay isOpen={_isOpen} onDismiss={dismiss}>
       <Content aria-label={title}>
         <h3>{title || ''}</h3>
         {children}
@@ -73,5 +80,21 @@ const Buttons = styled.div`
   justify-content: flex-end;
   gap: 8px;
 `;
+
+export function openConfirmDialog(title: string, onDismiss: Handler, onConfirm: Handler, children: ReactNode) {
+  const target = document.createElement('div');
+  document.body.appendChild(target);
+
+  const _onDismiss = (event: MouseEvent) => {
+    document.body.removeChild(target);
+    onDismiss.call(null, event);
+  }
+  const _onConfirm = (event: MouseEvent) => {
+    document.body.removeChild(target);
+    onConfirm.call(null, event);
+  }
+
+  render(<ConfirmDialog isOpen={true} title={title} onDismiss={_onDismiss} onConfirm={_onConfirm} children={children}/>, target)
+}
 
 export default ConfirmDialog;
