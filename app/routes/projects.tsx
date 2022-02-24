@@ -92,7 +92,6 @@ export default function Index() {
       },
       'This action is irreversible'
     );
-    console.log('deleting', project);
   };
 
   function confirmDeleteProject() {

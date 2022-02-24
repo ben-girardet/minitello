@@ -154,13 +154,54 @@ export class StepUtil {
       throw result;
     }
 
-    console.log('ready to delete project', projectId);
-
     await db.userProjects.deleteMany({where: {projectId}});
     await db.step.delete({where: {id: projectId}});
     await db.step.deleteMany({where: {projectId}});
   }
 
+  public static async editStepFromEditor({form, userId}: {form: FormData, userId: string}): Promise<Step> {
+    const projectId = form.get("projectId");
+    const stepId = form.get("stepId");
+    const name = form.get("name");
+    const description = form.get("description");
+
+    if (
+      !isString(projectId) ||
+      !isString(stepId) ||
+      !isString(name) || 
+      !isString(description)
+    ) {
+      throw FormResultGlobalError(`Form not submitted correctly.`);
+    }
+
+    const result: FormResult = {_global: {}};
+
+    result.name = { value: name, error: StepUtil.validateName(name) };
+
+    if (Object.values(result).map(r => r.error).some(Boolean)) {
+      throw result;
+    }
+
+    const project = await db.step.findUnique({where: {id: projectId}});
+    if (!project) {
+      throw FormResultGlobalError('Project not found');
+    }
+    // TODO: ensure the user has the right to write in this project
+
+    const step = await db.step.findUnique({where: {id: stepId}});
+    if (!step) {
+      throw FormResultGlobalError('Step not found');
+    } else if (step.projectId !== projectId) {
+      throw FormResultGlobalError('Invalid step, wrong project');
+    }
+
+    const updatedStep = await db.step.update({
+      where: {id: stepId}, 
+      data: {name, description}
+    });  
+    await StepUtil.updateProjectTree(updatedStep);
+    return updatedStep;
+  }
   public static async toggleProgress({form, userId}: {form: FormData, userId: string}): Promise<Step> {
     const projectId = form.get("projectId");
     const stepId = form.get("stepId");
@@ -344,8 +385,6 @@ export class StepUtil {
     if (!stepToDelete) {
       throw new Error('Step to delete not found');
     }
-
-    console.log('stepToDelete', stepToDelete);
 
     // parse step and its children to compute a list of ids to delete
     const stepIdsToDelete: string[] = [stepToDelete.id];

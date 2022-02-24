@@ -36,6 +36,7 @@ export default css`
 
   --background: hsl(var(--primary-hue) var(--very-light));
   --foreground: var(--very-light-contrast);
+  --foreground-light: hsl(0 0% 50%);
 
   --modal-layer-background: white;
   --modal-layer-foreground: var(--foreground);

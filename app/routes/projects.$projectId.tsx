@@ -66,6 +66,8 @@ export const action: ActionFunction = async ({
         throw FormResultGlobalError(`Failed to create the step`);
       }
       return newStep;
+    } else if (action === 'edit-step') {
+      return await StepUtil.editStepFromEditor({form, userId});
     } else if (action === 'toggle-progress') {
       return await StepUtil.toggleProgress({form, userId});
     } else if (action === 'move-step') {
@@ -73,7 +75,7 @@ export const action: ActionFunction = async ({
     } else if (action === 'delete-step') {
       await StepUtil.deleteStep({form, userId});
       return json({}, 200);
-    } else if (action === 'delete-step') {
+    } else if (action === 'duplicate-step') {
       await StepUtil.duplicateStep({form, userId});
       return json({}, 200);
     } else {
@@ -111,7 +113,6 @@ export default function Index() {
   const [editingStep, setEditingStep] = useState<StepModel | undefined>(undefined);
 
   function startEditingStep(msgstep: string, step: StepModel): void {
-    console.log('start editing', msgstep, step);
     setEditingStep(step);
     setIsEditorOpen(true);
   }
@@ -158,7 +159,13 @@ export default function Index() {
             ></StepCreator>
         </div>
       </Stack>
-      <StepEditor isOpen={isEditorOpen} onDismiss={dismissStepEditor} onSave={saveStepEditor} step={editingStep!}></StepEditor>
+      <StepEditor
+        isOpen={isEditorOpen}
+        onDismiss={dismissStepEditor}
+        onSave={saveStepEditor}
+        actionData={actionData}
+        step={editingStep!}
+      ></StepEditor>
     </Wrapper>
   );
 }

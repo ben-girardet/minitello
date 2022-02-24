@@ -269,6 +269,9 @@ export function Step({step}: {step: StepWithChildren}) {
       </Main>
       {opened ? (
         <WhenOpenedWrapper>
+          {step.description ? (
+            <Description>{step.description}</Description>
+          ) : undefined}
           <Children>
             {step.children ? step.children.map((child) => (
               <Step step={child} key={child.id}></Step>
@@ -339,6 +342,8 @@ const Name = styled.button`
   color: var(--foreground);
   border: 0;
   text-align: left;
+  overflow-wrap: break-word;
+  hyphens: auto;
   cursor: pointer;
 
   width: 100%;
@@ -379,6 +384,13 @@ const WhenOpenedWrapper = styled.div`
     opacity: 1;
   }
 `;
+
+const Description = styled.div`
+  font-size: 0.9rem;
+  padding: 0 16px 8px;
+  color: var(--foreground-light);
+`;
+
 const Children = styled.div``;
 
 const DropBase = styled.div`

@@ -4,15 +4,22 @@ import VisuallyHidden from './visually-hidden';
 import { DialogOverlay, DialogContent } from '@reach/dialog';
 import Button from './button';
 import { Step } from '@prisma/client';
+import { Form, useSubmit } from 'remix';
+import Stack from './stack';
+import FormLabel from './form-label';
+import TextField from './text-field';
+import FormError from './form-error';
+import { FormResult } from '~/utils/form';
 
 type StepEditorProps = {
   isOpen: boolean;
   step: Step;
+  actionData?: FormResult;
   onDismiss(event: MouseEvent): void;
   onSave(event: MouseEvent): void;
 }
 
-const StepEditor: FunctionComponent<StepEditorProps> = ({isOpen, step, onDismiss, onSave, children}) => {
+const StepEditor: FunctionComponent<StepEditorProps> = ({isOpen, actionData, step, onDismiss, onSave, children}) => {
 
   function dismiss(event: MouseEvent) {
     event.stopPropagation();
@@ -24,19 +31,58 @@ const StepEditor: FunctionComponent<StepEditorProps> = ({isOpen, step, onDismiss
     event.stopPropagation();
     event.preventDefault();
     onSave(event);
+    submit(event.currentTarget as HTMLInputElement);
   }
+
+  const submit = useSubmit();
 
   return (
     <Overlay isOpen={isOpen} onDismiss={dismiss}>
       <Content aria-labelledby="step-editor-title">
         <h3 id="step-editor-title">Edit step</h3>
+        <Form
+          method="put"
+          aria-describedby={
+            actionData?._global?.error
+              ? "form-error-message"
+              : undefined
+          }
+        >
 
-        
-        
-        <Buttons>
-          <Button variant="ghost" size="small" onClick={dismiss}>Cancel</Button>
-          <Button variant="fill" size="small" onClick={save}>Confirm</Button>
-        </Buttons>
+          <input
+            type="hidden"
+            name="_action"
+            value="edit-step"
+          />
+          <input
+            type="hidden"
+            name="stepId"
+            value={step?.id}
+          />
+          <input
+            type="hidden"
+            name="projectId"
+            value={step?.projectId}
+          />
+
+            <Stack size="medium">
+              <Stack size="small">
+                <FormLabel htmlFor="name">Name</FormLabel>
+                <TextField formResult={actionData?.name} name="name" defaultValue={step?.name}></TextField>
+                <FormError formResult={actionData?.name} name="name"></FormError>
+              </Stack>
+              <Stack size="small">
+                <FormLabel htmlFor="description">Description</FormLabel>
+                <TextField formResult={actionData?.description} name="description" defaultValue={step?.description || ''}></TextField>
+                <FormError formResult={actionData?.description} name="description"></FormError>
+              </Stack>
+              <FormError formResult={actionData?._global} name="_global"></FormError>
+            </Stack>
+          <Buttons>
+            <Button variant="ghost" size="small" onClick={dismiss}>Cancel</Button>
+            <Button type="submit" variant="fill" size="small" onClick={save}>Confirm</Button>
+          </Buttons>
+        </Form>
       </Content>
     </Overlay>
   );

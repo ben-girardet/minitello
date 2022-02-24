@@ -31,7 +31,6 @@ export const action: ActionFunction = async ({
   const form = await request.formData();
   const loginType = getFormDataAsString(form, 'loginType');
   const redirectTo = getFormDataAsString(form, 'redirectTo', true);
-  console.log('loginType', loginType);
   try {
     if (loginType === 'login') {
       const user = await UserUtil.loginFromForm({form});

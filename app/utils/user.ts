@@ -61,8 +61,6 @@ export class UserUtil {
     const username = form.get("username");
     const password = form.get("password");
 
-    console.log('up', username, password);
-
     if (
       !isString(username) ||
       !isString(password)
